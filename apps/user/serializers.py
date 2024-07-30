@@ -1,0 +1,117 @@
+from django.core.exceptions import ValidationError
+from phonenumber_field.serializerfields import PhoneNumberField
+from rest_framework import serializers
+
+from config.sms.otp import OTPManager
+
+from .models import CustomUser, Student
+
+
+class SignupSerializer(serializers.ModelSerializer):
+    phone_number = PhoneNumberField()
+
+    class Meta:
+        model = CustomUser
+        fields = ["full_name", "email", "phone_number"]
+
+    def validate_email(self, value):
+        if CustomUser.objects.filter(email=value).exists():
+            raise ValidationError("Email is already in use.")
+        return value
+
+    def validate_phone_number(self, value):
+        user = CustomUser.objects.filter(phone_number=value).first()
+        if user:
+            if not user.is_active:
+                raise ValidationError(
+                    "Your account is disabled. Please contact the administrator."
+                )
+            else:
+                raise ValidationError("Phone number is already in use.")
+        return value
+
+    def create(self, validated_data):
+        user = CustomUser.objects.create_user(**validated_data)
+        return user
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+    otp = serializers.CharField()
+    reference_key = serializers.CharField()
+    # push_notification_token = serializers.CharField(required=False)
+    # device_id = serializers.CharField(required=False)
+
+    def validate(self, attrs):
+        otp = attrs["otp"]
+        reference_key = attrs["reference_key"]
+        otp_manager = OTPManager()
+        phone_number = otp_manager.validate_token(reference_key)
+        response = otp_manager.verify_totp(reference_key, otp)
+        if not response:
+            raise serializers.ValidationError(
+                {"otp": "Invalid OTP or Expired, Resend again"}
+            )
+        attrs["phone_number"] = phone_number
+        return attrs
+
+
+class LoginSerializer(serializers.Serializer):
+    phone_number = PhoneNumberField()
+
+    def validate_phone_number(self, value):
+        if not CustomUser.objects.filter(phone_number=value).exists():
+            raise ValidationError("User with this phone number does not exist.")
+        return value
+
+
+class StudentProfileSerializer(serializers.ModelSerializer):
+    phone_number = serializers.SerializerMethodField()
+    email = serializers.SerializerMethodField()
+    full_name = serializers.SerializerMethodField()
+
+    profile_photo = serializers.ImageField(required=False)
+    parent_profile_photo = serializers.ImageField(required=False)
+    x_result = serializers.FileField(required=False)
+    xii_result = serializers.FileField(required=False)
+    college_result = serializers.FileField(required=False)
+
+    class Meta:
+        model = Student
+        fields = [
+            "full_name",
+            "email",
+            "phone_number",
+            "about",
+            "profile_photo",
+            "mother_name",
+            "father_name",
+            "occupation",
+            "parent_mobile_number",
+            "parent_email",
+            "parent_profile_photo",
+            "date_of_birth",
+            "gender",
+            "nationality",
+            "blood_group",
+            "permanent_address",
+            "permanent_address_pincode",
+            "correspondence_address",
+            "correspondence_address_pincode",
+            "school_name",
+            "college_name",
+            "marks_x",
+            "x_result",
+            "marks_xii",
+            "xii_result",
+            "marks_college",
+            "college_result",
+        ]
+
+    def get_phone_number(self, obj):
+        return obj.user.phone_number
+
+    def get_email(self, obj):
+        return obj.user.email
+
+    def get_full_name(self, obj):
+        return obj.user.get_full_name()
