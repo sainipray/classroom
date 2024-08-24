@@ -11,7 +11,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 class CustomUserManager(BaseUserManager):
     def create_user(
-        self, email, phone_number, full_name, password=None, **extra_fields
+            self, email, phone_number, full_name, password=None, **extra_fields
     ):
         if not email:
             raise ValueError(_("The Email field must be set"))
@@ -28,7 +28,7 @@ class CustomUserManager(BaseUserManager):
         return user
 
     def create_superuser(
-        self, email, phone_number, full_name, password=None, **extra_fields
+            self, email, phone_number, full_name, password=None, **extra_fields
     ):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
@@ -149,3 +149,42 @@ class Student(TimeStampedModel):
 
     def __str__(self):
         return self.user.full_name
+
+
+class Instructor(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+
+
+class Teacher(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+
+
+class DeviceSession(models.Model):
+    MOBILE = 'mobile'
+    DESKTOP = 'desktop'
+
+    DEVICE_CHOICES = [
+        (MOBILE, 'Mobile'),
+        (DESKTOP, 'Desktop'),
+    ]
+
+    user = models.ForeignKey(CustomUser, related_name='device_sessions', on_delete=models.CASCADE)
+    device_type = models.CharField(max_length=10, choices=DEVICE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_login = models.DateTimeField(auto_now=True)  # Auto-update with each login
+
+    class Meta:
+        unique_together = ('user', 'device_type')
+        verbose_name = 'Device Session'
+        verbose_name_plural = 'Device Sessions'
+
+    def __str__(self):
+        return f"{self.user} - {self.device_type}"
+
+    """
+    device_type = request.data.get('device_type')
+    # Delete existing sessions for the device type
+    DeviceSession.objects.filter(user=user, device_type=device_type).delete()
+    # Save new device session and update last_login
+    DeviceSession.objects.create(user=user, device_type=device_type, last_login=timezone.now())
+    """
