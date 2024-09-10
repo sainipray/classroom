@@ -152,11 +152,11 @@ class Student(TimeStampedModel):
 
 
 class Instructor(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='instructor', null=True, blank=True)
 
 
 class Teacher(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='teacher')
 
 
 class DeviceSession(models.Model):

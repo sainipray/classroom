@@ -8,7 +8,7 @@ from .models import CustomUser, Student
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    phone_number = PhoneNumberField()
+    phone_number = PhoneNumberField(region="IN")
 
     class Meta:
         model = CustomUser
@@ -56,7 +56,7 @@ class VerifyOTPSerializer(serializers.Serializer):
 
 
 class LoginSerializer(serializers.Serializer):
-    phone_number = PhoneNumberField()
+    phone_number = PhoneNumberField(region='IN')
 
     def validate_phone_number(self, value):
         if not CustomUser.objects.filter(phone_number=value).exists():

@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_yasg",
+    "corsheaders",
 ]
 
 PROJECT_APPS = [
@@ -54,6 +55,7 @@ PROJECT_APPS = [
 INSTALLED_APPS += PROJECT_APPS
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -247,3 +249,5 @@ SPECTACULAR_SETTINGS = {
 PUSH_NOTIFICATIONS_SETTINGS = {
     "FCM_API_KEY": "",
 }
+
+CORS_ORIGIN_ALLOW_ALL = True

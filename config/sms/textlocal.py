@@ -19,7 +19,7 @@ MESSAGES = {
 
 
 class SMSManager:
-    def __init__(self, user, apikey=None, sender=None):
+    def __init__(self, user, apikey='NmQzNTZkNTQ1MjZlNDg1NDRiNDc1MTczNTU2MTRlN2E=', sender='BALUJC'):
         self.user = user
         self.apikey = apikey or config.TEXT_LOCAL_SMS_APIKEY
         self.sender = sender or config.TEXT_LOCAL_SMS_SENDER
