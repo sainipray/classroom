@@ -250,4 +250,9 @@ PUSH_NOTIFICATIONS_SETTINGS = {
     "FCM_API_KEY": "",
 }
 
+PHONENUMBER_DEFAULT_REGION = 'IN'
+# Ensure that phone number format adheres to the default region
+PHONENUMBER_DB_FORMAT = 'E164'  # Stores the number in international format in the database
+PHONENUMBER_DEFAULT_FORMAT = 'NATIONAL'  # Formats the number for display in national format
+
 CORS_ORIGIN_ALLOW_ALL = True

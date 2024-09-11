@@ -6,6 +6,9 @@ from config.sms.otp import OTPManager
 
 from .models import CustomUser, Student
 
+from rest_framework import serializers
+from .models import CustomUser, Teacher, Instructor
+
 
 class SignupSerializer(serializers.ModelSerializer):
     phone_number = PhoneNumberField(region="IN")
@@ -38,6 +41,7 @@ class SignupSerializer(serializers.ModelSerializer):
 class VerifyOTPSerializer(serializers.Serializer):
     otp = serializers.CharField()
     reference_key = serializers.CharField()
+
     # push_notification_token = serializers.CharField(required=False)
     # device_id = serializers.CharField(required=False)
 
@@ -115,3 +119,30 @@ class StudentProfileSerializer(serializers.ModelSerializer):
 
     def get_full_name(self, obj):
         return obj.user.get_full_name()
+
+
+class CustomUserSerializer(serializers.ModelSerializer):
+    phone_number = PhoneNumberField(region="IN")
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'full_name', 'email', 'phone_number', 'role', 'is_active', 'date_joined']
+
+    def validate_phone_number(self, value):
+        """Check if the phone number already exists."""
+        if CustomUser.objects.filter(phone_number=value).exists():
+            raise ValidationError("A user with this phone number already exists.")
+        return value
+
+    def create(self, validated_data):
+        # Create user based on role
+        role = validated_data.pop('role')
+        user = CustomUser.objects.create(**validated_data, role=role)
+
+        # Create the corresponding role model based on the user's role
+        if role == 'TEACHER':
+            Teacher.objects.create(user=user)
+        elif role == 'INSTRUCTOR':
+            Instructor.objects.create(user=user)
+        # Admin role doesn't require a separate model, so no need to create anything for admin
+        return user

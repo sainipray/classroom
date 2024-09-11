@@ -8,7 +8,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from config.permissions import IsStudent
 from config.sms.textlocal import LOGIN_OTP_KEY, SIGNUP_OTP_KEY, SMSManager
 
-from .models import CustomUser
+from .models import CustomUser, Roles
 from .schema_definitions import (
     login_api_view,
     phone_otp_verify_api_view,
@@ -19,7 +19,7 @@ from .serializers import (
     LoginSerializer,
     SignupSerializer,
     StudentProfileSerializer,
-    VerifyOTPSerializer,
+    VerifyOTPSerializer, CustomUserSerializer,
 )
 
 
@@ -129,3 +129,20 @@ class StudentProfileAPIView(generics.RetrieveUpdateAPIView):
     @student_profile_api_view
     def patch(self, request, *args, **kwargs):
         return super().patch(request, *args, **kwargs)
+
+
+class UserCreateListView(generics.ListCreateAPIView):
+    queryset = CustomUser.objects.exclude(role=Roles.STUDENT)
+    serializer_class = CustomUserSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

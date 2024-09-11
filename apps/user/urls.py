@@ -6,7 +6,7 @@ from .views import (
     LoginAPIView,
     PhoneOTPVerifyAPIView,
     RegisterAPIView,
-    StudentProfileAPIView,
+    StudentProfileAPIView, UserCreateListView,
 )
 
 urlpatterns = [
@@ -14,4 +14,6 @@ urlpatterns = [
     path("verify-otp/", PhoneOTPVerifyAPIView.as_view(), name="verify_otp"),
     path("login/", LoginAPIView.as_view(), name="login"),
     path("profile/", StudentProfileAPIView.as_view(), name="profile"),
+    path('users/', UserCreateListView.as_view(), name='user-list-create'),
+    # path('users/<int:pk>/', UserUpdateView.as_view(), name='user-update'),
 ]
