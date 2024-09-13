@@ -21,6 +21,7 @@ phonenumbers = "^8.13.40"
 pillow = "^10.4.0"
 drf-yasg = "^1.21.7"
 setuptools = "^72.0.0"
+django-filter = "^24.3"
 
 
 [tool.poetry.group.dev.dependencies]

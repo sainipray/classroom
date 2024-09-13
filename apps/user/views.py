@@ -1,6 +1,8 @@
 # accounts/views.py
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets
+from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -150,6 +152,8 @@ class UserCreateListView(generics.ListCreateAPIView):
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.filter(role=Roles.STUDENT).exclude(student__isnull=True)
     serializer_class = StudentUserSerializer
+    filter_backends = (DjangoFilterBackend, SearchFilter)
+    search_fields = ('full_name', 'email', 'phone_number')
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -166,7 +170,3 @@ class StudentViewSet(viewsets.ModelViewSet):
         self.perform_update(serializer)
         return Response({"message": "Student information Updated"}, status=status.HTTP_200_OK)
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
