@@ -75,7 +75,7 @@ class Student(TimeStampedModel):
     user = models.OneToOneField(
         CustomUser,
         on_delete=models.CASCADE,
-        related_name="student_profile",
+        related_name="student",
         verbose_name="User",
     )
     about = models.TextField(blank=True, verbose_name="About")
@@ -136,11 +136,11 @@ class Student(TimeStampedModel):
     x_result = models.FileField(
         upload_to="results/x/", blank=True, verbose_name="X Result"
     )
-    marks_xii = models.FloatField(blank=True, verbose_name="Marks in XII (%)")
+    marks_xii = models.FloatField(blank=True, null=True, verbose_name="Marks in XII (%)")
     xii_result = models.FileField(
         upload_to="results/xii/", blank=True, verbose_name="XII Result"
     )
-    marks_college = models.FloatField(blank=True, verbose_name="Marks in College (%)")
+    marks_college = models.FloatField(blank=True, null=True, verbose_name="Marks in College (%)")
     college_result = models.FileField(
         upload_to="results/college/",
         blank=True,

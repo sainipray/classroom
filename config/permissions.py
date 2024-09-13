@@ -12,14 +12,14 @@ class IsAdmin(BasePermission):
 
 class IsSuperUser(BasePermission):
     def has_permission(self, request, view):
-        return request.user and request.user.is_superuser
+        return request.user.is_authenticated and request.user.is_superuser
 
 
 class IsStudent(BasePermission):
     def has_permission(self, request, view):
-        return request.user and request.user.role == Roles.STUDENT
+        return request.user.is_authenticated and request.user.role == Roles.STUDENT
 
 
 class IsInstructor(BasePermission):
     def has_permission(self, request, view):
-        return request.user and request.user.role == Roles.INSTRUCTOR
+        return request.user.is_authenticated and request.user.role == Roles.INSTRUCTOR

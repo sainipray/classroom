@@ -1,13 +1,12 @@
 # accounts/views.py
 from django.utils import timezone
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from config.permissions import IsStudent
 from config.sms.textlocal import LOGIN_OTP_KEY, SIGNUP_OTP_KEY, SMSManager
-
 from .models import CustomUser, Roles
 from .schema_definitions import (
     login_api_view,
@@ -19,7 +18,7 @@ from .serializers import (
     LoginSerializer,
     SignupSerializer,
     StudentProfileSerializer,
-    VerifyOTPSerializer, CustomUserSerializer,
+    VerifyOTPSerializer, CustomUserSerializer, StudentSerializer, StudentUserSerializer,
 )
 
 
@@ -144,5 +143,30 @@ class UserCreateListView(generics.ListCreateAPIView):
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+class StudentViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.filter(role=Roles.STUDENT).exclude(student__isnull=True)
+    serializer_class = StudentUserSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({"message": "Student information Created"}, status=status.HTTP_200_OK)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        student = instance.student
+        serializer = StudentSerializer(student, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({"message": "Student information Updated"}, status=status.HTTP_200_OK)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

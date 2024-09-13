@@ -21,11 +21,11 @@ def custom_exception_handler(exc, context):
             output = exc.detail
         else:
             output = {"non_field_errors": exc.detail}
-        error = None
+        error = {}
         for field, value in output.items():
             if isinstance(value, list):
                 value = value[0]
-            error = {field: value}
+            error[field] = value
         data = {"error": error, "status": False}
         set_rollback()
         return Response(data, status=exc.status_code, headers=headers)

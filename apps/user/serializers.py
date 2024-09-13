@@ -1,13 +1,11 @@
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
 
 from config.sms.otp import OTPManager
-
-from .models import CustomUser, Student
-
-from rest_framework import serializers
-from .models import CustomUser, Teacher, Instructor
+from .models import CustomUser, Teacher, Instructor, Roles
+from .models import Student
 
 
 class SignupSerializer(serializers.ModelSerializer):
@@ -146,3 +144,38 @@ class CustomUserSerializer(serializers.ModelSerializer):
             Instructor.objects.create(user=user)
         # Admin role doesn't require a separate model, so no need to create anything for admin
         return user
+
+
+class StudentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Student
+        fields = [
+            'about', 'profile_photo', 'mother_name', 'father_name',
+            'occupation', 'parent_mobile_number', 'parent_email', 'parent_profile_photo',
+            'date_of_birth', 'gender', 'nationality', 'blood_group', 'permanent_address',
+            'permanent_address_pincode', 'correspondence_address', 'correspondence_address_pincode',
+            'school_name', 'college_name', 'marks_x', 'x_result', 'marks_xii', 'xii_result',
+            'marks_college', 'college_result'
+        ]
+
+    def update(self, instance, validated_data):
+        # Update the Student fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
+
+
+class StudentUserSerializer(serializers.ModelSerializer):
+    student = StudentSerializer(read_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'email', 'phone_number', 'full_name', 'role', 'is_active', 'date_joined', 'student']
+
+    def create(self, validated_data):
+        with transaction.atomic():
+            user = CustomUser.objects.create_user(role=Roles.STUDENT, **validated_data)
+            Student.objects.create(user=user)
+            return user
