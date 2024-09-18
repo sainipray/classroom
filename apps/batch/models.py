@@ -31,9 +31,9 @@ class Batch(TimeStampedModel):
     name = models.CharField(max_length=255, verbose_name="Batch Name")
     batch_code = models.CharField(max_length=8, default=generate_batch_code, unique=True, verbose_name="Batch Code")
     start_date = models.DateField(verbose_name="Start Date")
-    subjects = models.ManyToManyField(Subject, related_name="batches", verbose_name="Subjects")
+    subject = models.ForeignKey(Subject, related_name="batches", verbose_name="Subject", on_delete=models.CASCADE)
     live_class_link = models.URLField(blank=True, null=True, verbose_name="Live Class Link")
-    instructor = models.ForeignKey(User, verbose_name="Instructor")
+    created_by = models.ForeignKey(User, verbose_name="Created By", on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = "Batch"

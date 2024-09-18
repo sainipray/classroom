@@ -48,7 +48,8 @@ INSTALLED_APPS = [
 ]
 
 PROJECT_APPS = [
-    "apps.user.apps.UserConfig"
+    "apps.user.apps.UserConfig",
+    "apps.batch.apps.BatchConfig"
     # "apps.course.apps.CourseConfig",
     # "apps.filemanager.apps.FilemanagerConfig",
 ]
@@ -223,7 +224,7 @@ REST_FRAMEWORK = {
 LOGIN_URL = "rest_framework:login"
 LOGOUT_URL = "rest_framework:logout"
 
-SWAGGER_SETTINGS = {"JSON_EDITOR": True, "SHOW_REQUEST_HEADERS": True}
+# SWAGGER_SETTINGS = {"JSON_EDITOR": True, "SHOW_REQUEST_HEADERS": True}
 
 SIMPLE_JWT = {
     "USER_ID_FIELD": "id",
@@ -257,3 +258,14 @@ PHONENUMBER_DB_FORMAT = 'E164'  # Stores the number in international format in t
 PHONENUMBER_DEFAULT_FORMAT = 'NATIONAL'  # Formats the number for display in national format
 
 CORS_ORIGIN_ALLOW_ALL = True
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'Token': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+    # 'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.openapi.AutoSchema',
+}
