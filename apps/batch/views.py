@@ -1,4 +1,6 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 
 from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial
@@ -32,12 +34,15 @@ class CustomResponseMixin(viewsets.ModelViewSet):
 class SubjectViewSet(viewsets.ModelViewSet):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
+    filter_backends = (DjangoFilterBackend, SearchFilter)
+    search_fields = ('name', 'description',)
 
 
 class BatchViewSet(CustomResponseMixin):
     queryset = Batch.objects.all()
     serializer_class = BatchSerializer
     retrieve_serializer_class = RetrieveBatchSerializer
+    list_serializer_class = RetrieveBatchSerializer
 
     def create(self, request, *args, **kwargs):
         request.data['created_by'] = request.user.id
