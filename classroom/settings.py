@@ -49,7 +49,8 @@ INSTALLED_APPS = [
 
 PROJECT_APPS = [
     "apps.user.apps.UserConfig",
-    "apps.batch.apps.BatchConfig"
+    "apps.batch.apps.BatchConfig",
+    "apps.course.apps.CourseConfig"
     # "apps.course.apps.CourseConfig",
     # "apps.filemanager.apps.FilemanagerConfig",
 ]

@@ -1,23 +1,13 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 
-from .views import (
-    CategoryDetailView,
-    CategoryListCreateView,
-    SubcategoryDetailView,
-    SubcategoryListCreateView,
-)
+from apps.course.views import CategoryViewSet, SubcategoryViewSet, CourseViewSet
+
+router = DefaultRouter()
+router.register(r'categories', CategoryViewSet)
+router.register(r'subcategories', SubcategoryViewSet)
+router.register(r'courses', CourseViewSet, basename='course')
 
 urlpatterns = [
-    path("categories/", CategoryListCreateView.as_view(), name="category_list_create"),
-    path("categories/<int:pk>/", CategoryDetailView.as_view(), name="category_detail"),
-    path(
-        "subcategories/",
-        SubcategoryListCreateView.as_view(),
-        name="subcategory_list_create",
-    ),
-    path(
-        "subcategories/<int:pk>/",
-        SubcategoryDetailView.as_view(),
-        name="subcategory_detail",
-    ),
+    path('', include(router.urls)),
 ]

@@ -3,9 +3,11 @@ import string
 
 from django.contrib.auth import get_user_model
 from django.db import models
+from django_extensions.db.fields import AutoSlugField
 from django_extensions.db.models import TimeStampedModel
 
 from apps.user.models import Student
+from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
 
@@ -38,6 +40,7 @@ class Batch(TimeStampedModel):
     class Meta:
         verbose_name = "Batch"
         verbose_name_plural = "Batches"
+        get_latest_by = 'modified'
 
     def __str__(self):
         return self.name

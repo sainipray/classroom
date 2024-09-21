@@ -45,11 +45,9 @@ class BatchViewSet(CustomResponseMixin):
     list_serializer_class = RetrieveBatchSerializer
 
     def create(self, request, *args, **kwargs):
-        request.data['created_by'] = request.user.id
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
         return Response(status=status.HTTP_201_CREATED, data={'message': "Successfully created"})
 
 

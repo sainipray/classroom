@@ -40,6 +40,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("apps.user.urls")),
     path("api/batch/", include("apps.batch.urls")),
+    path("api/course/", include("apps.course.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += [

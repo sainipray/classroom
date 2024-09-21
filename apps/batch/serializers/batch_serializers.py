@@ -11,9 +11,19 @@ class SubjectSerializer(serializers.ModelSerializer):
 
 
 class BatchSerializer(serializers.ModelSerializer):
+    # Make created_by read-only as it will be automatically set by the view
+    created_by = serializers.ReadOnlyField()
+    batch_code = serializers.ReadOnlyField()
+
     class Meta:
         model = Batch
-        fields = '__all__'
+        fields = ['name', 'start_date', 'subject', 'created_by', 'batch_code']  # Only these fields are exposed
+
+    def create(self, validated_data):
+        # The validated data doesn't contain `created_by` yet, so we add it manually.
+        validated_data['created_by'] = self.context['request'].user
+        # Now save the instance
+        return super().create(validated_data)
 
 
 class RetrieveBatchSerializer(serializers.ModelSerializer):
