@@ -1,8 +1,9 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from abstract.views import CustomResponseMixin
 from .models import Category, Subcategory, Course
 from .serializers import CategorySerializer, SubcategorySerializer, CourseSerializer
 
@@ -38,8 +39,9 @@ class CategoryViewSet(ModelViewSet):
 class SubcategoryViewSet(ModelViewSet):
     queryset = Subcategory.objects.all()
     serializer_class = SubcategorySerializer
-    filter_backends = (DjangoFilterBackend, )
+    filter_backends = (DjangoFilterBackend,)
     filterset_fields = ['category']
+
     def create(self, request, *args, **kwargs):
         category_id = request.data.get('category')
         sub_categories = request.data.get('sub_categories', [])
@@ -53,12 +55,13 @@ class SubcategoryViewSet(ModelViewSet):
         # Return the created subcategories in the response
         return Response({"message": "Subcategories Created Successfully"}, status=status.HTTP_201_CREATED)
 
-class CourseViewSet(viewsets.ModelViewSet):
+
+class CourseViewSet(CustomResponseMixin):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response({"message": "Course created successfully"}, status=status.HTTP_201_CREATED)

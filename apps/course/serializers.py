@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Category, Subcategory, Course
+from .models import Category, Subcategory, Course, CourseCategorySubCategory
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -24,15 +24,12 @@ class SubcategorySerializer(serializers.ModelSerializer):
 
 
 class CategorySubCategorySerializer(serializers.ModelSerializer):
-    categories = CategorySerializer(many=True, required=False)
-    thumbnail = serializers.ImageField(required=False)
-
     class Meta:
-        model = Course
+        model = CourseCategorySubCategory
+
 
 class CourseSerializer(serializers.ModelSerializer):
-    categories = CategorySerializer(many=True, required=False)
-    thumbnail = serializers.ImageField(required=False)
+    categories = serializers.ListField(write_only=True)
 
     class Meta:
         model = Course
@@ -43,17 +40,12 @@ class CourseSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
+        request = self.context.get('request')
         categories_data = validated_data.pop('categories', [])
-        course = Course.objects.create(**validated_data)
+        course = Course.objects.create(created_by=request.user, **validated_data)
 
         # Handle categories and subcategories
         for category_data in categories_data:
-            subcategories_data = category_data.pop('subcategories', [])
-            category, created = Category.objects.get_or_create(
-                name=category_data['name'], defaults=category_data)
-            for subcategory_data in subcategories_data:
-                Subcategory.objects.get_or_create(
-                    name=subcategory_data['name'], category=category, defaults=subcategory_data)
-            course.categories.add(category)
-
+            category_data['category'] = Category.objects.get(id=category_data['category'])
+            CourseCategorySubCategory.objects.create(course=course, **category_data)
         return course
