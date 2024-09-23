@@ -48,7 +48,7 @@ class Batch(TimeStampedModel):
 
 class Enrollment(TimeStampedModel):
     batch = models.ForeignKey(Batch, related_name="enrollments", on_delete=models.CASCADE)
-    student = models.ForeignKey(Student, related_name="enrollments", on_delete=models.CASCADE)
+    student = models.ForeignKey(User, related_name="enrollments", on_delete=models.CASCADE)
     is_approved = models.BooleanField(default=False, verbose_name="Is Approved")
     approved_by = models.ForeignKey(User, verbose_name="Approved By", on_delete=models.CASCADE)
 

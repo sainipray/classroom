@@ -5,10 +5,10 @@ from .views import SubjectViewSet, BatchViewSet, EnrollmentViewSet, LiveClassVie
 router = DefaultRouter()
 router.register(r'subjects', SubjectViewSet)
 router.register(r'batches', BatchViewSet)
-router.register(r'enrollments', EnrollmentViewSet)
 router.register(r'live_classes', LiveClassViewSet)
 router.register(r'attendances', AttendanceViewSet)
 router.register(r'study-materials', StudyMaterialViewSet)
+router.register(r'enrollments', EnrollmentViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
