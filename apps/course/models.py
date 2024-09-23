@@ -115,25 +115,29 @@ class CourseCategorySubCategory(TimeStampedModel):
         return f"{self.course} - {self.category} - {', '.join(self.subcategories)}"
 
 
-class Section(TimeStampedModel):
-    course = models.ForeignKey(Course, related_name="sections", on_delete=models.CASCADE)
-    title = models.CharField(max_length=255, verbose_name="Section Title")
-    description = models.TextField(blank=True, null=True, verbose_name="Section Description")
+class Folder(TimeStampedModel):
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='folders')
+    course = models.ForeignKey(Course, related_name="folders", on_delete=models.CASCADE)
+    title = models.CharField(max_length=255, verbose_name="Folder Title")
 
     def __str__(self):
         return self.title
 
 
-class Content(TimeStampedModel):
-    section = models.ForeignKey(Section, related_name="contents", on_delete=models.CASCADE)
+class File(TimeStampedModel):
+    folder = models.ForeignKey(Folder, related_name="files", on_delete=models.CASCADE)
     title = models.CharField(max_length=255, verbose_name="Lecture Title")
-    description = models.TextField(blank=True, null=True, verbose_name="Lecture Description")
-    video = models.FileField(upload_to='lecture_videos/', verbose_name="Lecture Video")
     document = models.FileField(upload_to='videos/', verbose_name="Lecture Video")
     is_locked = models.BooleanField(default=False, verbose_name="Is Locked")
 
     def __str__(self):
         return self.title
+
+    def save(self, **kwargs):
+        # Automatically set the title from the document file name, if title is empty
+        if not self.title and self.document:
+            self.title = self.document.name.rsplit('/', 1)[-1]  # Get the file name only
+        super(File, self).save(**kwargs)
 
 
 class Assignment(TimeStampedModel):

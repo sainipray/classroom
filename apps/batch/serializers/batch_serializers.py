@@ -28,7 +28,7 @@ class BatchSerializer(serializers.ModelSerializer):
 
 class RetrieveBatchSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer()
-    created_by = CustomUserSerializer()
+    created_by = serializers.ReadOnlyField(source='created_by.full_name')
 
     class Meta:
         model = Batch
