@@ -6,6 +6,7 @@ from apps.course.models import Course  # Assuming you have a Course model
 
 User = get_user_model()
 
+
 class Coupon(TimeStampedModel):
     COUPON_TYPE_CHOICES = [
         ('public', 'Public'),
@@ -19,19 +20,23 @@ class Coupon(TimeStampedModel):
 
     name = models.CharField(max_length=255, verbose_name="Offer Name")
     code = models.CharField(max_length=50, unique=True, verbose_name="Coupon Code")
-    coupon_type = models.CharField(max_length=10, choices=COUPON_TYPE_CHOICES, default='public', verbose_name="Coupon Type")
+    coupon_type = models.CharField(max_length=10, choices=COUPON_TYPE_CHOICES, default='public',
+                                   verbose_name="Coupon Type")
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, verbose_name="Discount Type")
     discount_value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Discount Value")
-    max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Max Discount Amount")
+    max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,
+                                              verbose_name="Max Discount Amount")
     start_datetime = models.DateTimeField(verbose_name="Start Date and Time")
     end_datetime = models.DateTimeField(null=True, blank=True, verbose_name="End Date and Time")
     lifetime = models.BooleanField(default=False, verbose_name="Lifetime")
-    min_order_value = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Minimum Order Value")
+    min_order_value = models.DecimalField(max_digits=10, decimal_places=2, default=0,
+                                          verbose_name="Minimum Order Value")
     max_uses = models.PositiveIntegerField(null=True, blank=True, verbose_name="Max Uses")
     usage_per_student = models.PositiveIntegerField(null=True, blank=True, verbose_name="Usage Per Student")
     is_visible = models.BooleanField(default=True, verbose_name="Visibility")
     status = models.BooleanField(default=True, verbose_name="Status")
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_coupons", verbose_name="Created By")
+    created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_coupons",
+                                   verbose_name="Created By")
     courses = models.ManyToManyField(Course, blank=True, related_name="coupons", verbose_name="Courses")
 
     # Tracking
@@ -51,10 +56,10 @@ class Coupon(TimeStampedModel):
     def __str__(self):
         return self.name
 
-    def save(self, *args, **kwargs):
+    def save(self, **kwargs):
         if self.lifetime:
             self.end_datetime = None
-        super().save(*args, **kwargs)
+        super().save(**kwargs)
 
     def apply_discount(self, original_price):
         """

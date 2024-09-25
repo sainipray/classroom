@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class CouponConfig(AppConfig):
+class LeadConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.coupon'
+    name = 'apps.lead'

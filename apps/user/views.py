@@ -143,10 +143,10 @@ class UserCreateListView(generics.ListCreateAPIView):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    # def list(self, request, *args, **kwargs):
+    #     queryset = self.get_queryset()
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
 
 
 class StudentViewSet(viewsets.ModelViewSet):
