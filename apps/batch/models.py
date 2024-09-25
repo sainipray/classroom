@@ -45,12 +45,16 @@ class Batch(TimeStampedModel):
     def __str__(self):
         return self.name
 
+    @property
+    def total_enrolled_students(self):
+        return self.enrollments.count()
+
 
 class Enrollment(TimeStampedModel):
     batch = models.ForeignKey(Batch, related_name="enrollments", on_delete=models.CASCADE)
     student = models.ForeignKey(User, related_name="enrollments", on_delete=models.CASCADE)
     is_approved = models.BooleanField(default=False, verbose_name="Is Approved")
-    approved_by = models.ForeignKey(User, verbose_name="Approved By", on_delete=models.CASCADE)
+    approved_by = models.ForeignKey(User, verbose_name="Approved By", on_delete=models.CASCADE, null=True, blank=True)
 
     class Meta:
         unique_together = ('batch', 'student')
@@ -59,6 +63,7 @@ class Enrollment(TimeStampedModel):
 
     def __str__(self):
         return f"{self.student} in {self.batch}"
+
 
 
 class LiveClass(TimeStampedModel):

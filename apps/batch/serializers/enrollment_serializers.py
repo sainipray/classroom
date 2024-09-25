@@ -1,11 +1,9 @@
-from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
 
 from apps.batch.models import Enrollment, Batch
 from apps.user.models import CustomUser, Roles, Student
 from apps.user.serializers import StudentUserSerializer
-
 
 
 # class BatchSerializer(serializers.ModelSerializer):
@@ -25,14 +23,11 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         fields = ['batch', 'students', 'is_approved']
 
     def validate(self, attrs):
-        batch_id = attrs.get('batch')
+        batch = attrs.get('batch')
         student_ids = attrs.get('students')
 
-        if not batch_id or not student_ids:
+        if not batch or not student_ids:
             raise serializers.ValidationError("Batch ID and student IDs are required.")
-
-        if not Batch.objects.filter(id=batch_id).exists():
-            raise serializers.ValidationError("Batch with this ID does not exist.")
 
         if not CustomUser.objects.filter(id__in=student_ids).exists():
             raise serializers.ValidationError("One or more student IDs do not exist.")
@@ -44,9 +39,10 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         enrollments = []
         for student_id in students:
             enrollment, created = Enrollment.objects.get_or_create(
-                batch_id=validated_data['batch'],
+                batch=validated_data['batch'],
                 student_id=student_id,
                 defaults={'is_approved': validated_data.get('is_approved', False)}
+
             )
             enrollments.append(enrollment)
 
@@ -64,9 +60,7 @@ class RetrieveEnrollmentSerializer(serializers.ModelSerializer):
 
 
 class ListEnrollmentSerializer(serializers.ModelSerializer):
-    # batch = BatchSerializer(read_only=True)
-    student = serializers.StringRelatedField()  # Adjust if you need more details
-    approved_by = serializers.StringRelatedField()  # Adjust if you need more details
+    approved_by = serializers.ReadOnlyField(source='approved_by.full_name')  # Adjust if you need more details
 
     class Meta:
         model = Enrollment
@@ -87,6 +81,6 @@ class BatchStudentUserSerializer(StudentUserSerializer):
             student = Student.objects.create(user=user)
 
             # Create enrollment for the newly created student
-            Enrollment.objects.create(batch=batch, student=student)
+            Enrollment.objects.create(batch=batch, student=user)
 
             return user

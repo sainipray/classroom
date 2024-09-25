@@ -8,7 +8,8 @@ from abstract.views import CustomResponseMixin
 from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial
 from .serializers.attendance_serializers import AttendanceSerializer
 from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSerializer, SubjectSerializer
-from .serializers.enrollment_serializers import EnrollmentSerializer, BatchStudentUserSerializer
+from .serializers.enrollment_serializers import EnrollmentSerializer, BatchStudentUserSerializer, \
+    ListEnrollmentSerializer
 from .serializers.liveclass_serializers import LiveClassSerializer
 from .serializers.studymaterial_serializer import StudyMaterialSerializer
 
@@ -33,20 +34,16 @@ class BatchViewSet(CustomResponseMixin):
         return Response(status=status.HTTP_201_CREATED, data={'message': "Successfully created"})
 
 
-class EnrollmentViewSet(CustomResponseMixin, viewsets.ModelViewSet):
+class EnrollmentViewSet(CustomResponseMixin):
     serializer_class = EnrollmentSerializer
     queryset = Enrollment.objects.all()
-
+    list_serializer_class = ListEnrollmentSerializer
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         enrollments = serializer.save()
         return Response({"enrollments": [enrollment.id for enrollment in enrollments]}, status=status.HTTP_201_CREATED)
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         enrollment = self.get_object()
