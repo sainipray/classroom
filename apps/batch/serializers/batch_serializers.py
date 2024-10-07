@@ -30,6 +30,8 @@ class RetrieveBatchSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer()
     created_by = serializers.ReadOnlyField(source='created_by.full_name')
     total_enrolled_students = serializers.ReadOnlyField()
+    enrolled_students = serializers.ReadOnlyField()
+    student_join_request = serializers.ReadOnlyField()
 
     class Meta:
         model = Batch

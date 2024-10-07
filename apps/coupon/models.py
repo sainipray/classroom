@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils import timezone
 from django_extensions.db.models import TimeStampedModel
-from apps.course.models import Course  # Assuming you have a Course model
+
 
 User = get_user_model()
 
@@ -37,7 +37,7 @@ class Coupon(TimeStampedModel):
     status = models.BooleanField(default=True, verbose_name="Status")
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_coupons",
                                    verbose_name="Created By")
-    courses = models.ManyToManyField(Course, blank=True, related_name="coupons", verbose_name="Courses")
+    courses = models.ManyToManyField('course.Course', blank=True, related_name="coupons", verbose_name="Courses")
 
     # Tracking
     total_applied = models.PositiveIntegerField(default=0, verbose_name="Total Applied")

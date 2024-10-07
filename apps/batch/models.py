@@ -3,11 +3,9 @@ import string
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django_extensions.db.fields import AutoSlugField
 from django_extensions.db.models import TimeStampedModel
 
 from apps.user.models import Student
-from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
 
@@ -47,7 +45,19 @@ class Batch(TimeStampedModel):
 
     @property
     def total_enrolled_students(self):
-        return self.enrollments.count()
+        return self.enrollments.filter(is_approved=True).count()
+
+    @property
+    def enrolled_students(self):
+        return [{'name': enroll.student.full_name, 'phone_number': enroll.student.phone_number.as_e164} for enroll in
+                self.enrollments.filter(is_approved=True)]
+
+    @property
+    def student_join_request(self):
+        return [{'id': enroll.id,
+                 'name': enroll.student.full_name,
+                 'phone_number': enroll.student.phone_number.as_e164} for enroll in
+                self.enrollments.filter(is_approved=False)]
 
 
 class Enrollment(TimeStampedModel):
@@ -65,12 +75,14 @@ class Enrollment(TimeStampedModel):
         return f"{self.student} in {self.batch}"
 
 
-
 class LiveClass(TimeStampedModel):
     batch = models.ForeignKey(Batch, related_name="live_classes", on_delete=models.CASCADE, verbose_name="Batch")
     title = models.CharField(max_length=255, verbose_name="Class Title")
-    link = models.URLField(verbose_name="Live Class Link")
-    date = models.DateTimeField(verbose_name="Class Date")
+    host_link = models.URLField(verbose_name="Live Class host_link", null=True, blank=True)
+    common_host_link = models.URLField(verbose_name="Live Class commonHostLink", null=True, blank=True)
+    common_moderator_link = models.URLField(verbose_name="Live Class commonModeratorLink", null=True, blank=True)
+    common_participant_link = models.URLField(verbose_name="Live Class commonParticipantLink", null=True, blank=True)
+    date = models.DateTimeField(verbose_name="Class Date", auto_now_add=True)
     is_recorded = models.BooleanField(default=False, verbose_name="Is Recorded")
 
     class Meta:

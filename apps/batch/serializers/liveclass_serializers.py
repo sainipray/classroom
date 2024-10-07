@@ -17,7 +17,7 @@ class LiveClassSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class RetreiveLiveClassSerializer(serializers.ModelSerializer):
+class RetrieveLiveClassSerializer(serializers.ModelSerializer):
     # batch = BatchSerializer(read_only=True)
 
     class Meta:

@@ -3,6 +3,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django_extensions.db.models import TimeStampedModel, TitleSlugDescriptionModel, ActivatorModel
 
+from apps.coupon.models import Coupon
 from apps.user.models import Student
 
 User = get_user_model()
@@ -75,6 +76,37 @@ class Course(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
+    @property
+    def content(self):
+        folder_structure = []
+        for folder in self.folders.all():
+            folder_data = {
+                'id': folder.id,
+                'title': folder.title,
+                'files': []
+            }
+            # Fetch files within the folder
+            for file in folder.files.all():
+                folder_data['files'].append({
+                    'id': file.id,
+                    'title': file.title,
+                    'document': file.document.url,  # URL to access the file
+                    'is_locked': file.is_locked
+                })
+            folder_structure.append(folder_data)
+
+        return folder_structure
+
+    @property
+    def categories_info(self):
+        categories_data = []
+        for category_subcategory in self.categories_subcategories.all():
+            categories_data.append({
+                'category': str(category_subcategory.category),
+                'subcategories': category_subcategory.subcategories
+            })
+        return categories_data
 
 
 class AdvancedCourseSettings(TimeStampedModel):
@@ -211,3 +243,9 @@ class AssignmentFeedback(TimeStampedModel):
 
     def __str__(self):
         return f"Feedback for {self.submission.assignment.title} - {self.submission.student.full_name}"
+
+
+class CoursePurchaseOrder(TimeStampedModel):
+    student = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Student")
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="Course")
+    transaction = models.ForeignKey('payment.Transaction', on_delete=models.CASCADE)

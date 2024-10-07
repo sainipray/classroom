@@ -44,6 +44,7 @@ urlpatterns = [
     path("api/lead/", include("apps.lead.urls")),
     path("api/coupon/", include("apps.coupon.urls")),
     path("api/utils/", include("apps.utils.urls")),
+    path("api/payment/", include("apps.payment.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += [

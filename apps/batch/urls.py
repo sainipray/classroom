@@ -1,6 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import SubjectViewSet, BatchViewSet, EnrollmentViewSet, LiveClassViewSet, AttendanceViewSet, StudyMaterialViewSet
+from .views import SubjectViewSet, BatchViewSet, EnrollmentViewSet, LiveClassViewSet, AttendanceViewSet, \
+    StudyMaterialViewSet, CreateLiveClassView
 
 router = DefaultRouter()
 router.register(r'subjects', SubjectViewSet)
@@ -12,4 +13,6 @@ router.register(r'enrollments', EnrollmentViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('create-live-class/', CreateLiveClassView.as_view(), name='create_live_class'),
+
 ]

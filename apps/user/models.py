@@ -32,6 +32,7 @@ class CustomUserManager(BaseUserManager):
     ):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
+        extra_fields.setdefault('role', 'ADMIN')
 
         if extra_fields.get("is_staff") is not True:
             raise ValueError(_("Superuser must have is_staff=True."))
@@ -62,6 +63,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(
         max_length=50, choices=Roles.choices, default=Roles.STUDENT, verbose_name="Role"
     )
+
+    merit_user_id = models.CharField(max_length=255, null=True, blank=True)
     objects = CustomUserManager()
 
     USERNAME_FIELD = "email"

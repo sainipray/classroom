@@ -831,6 +831,20 @@ files = [
 ]
 
 [[package]]
+name = "razorpay"
+version = "1.4.2"
+description = "Razorpay Python Client"
+optional = false
+python-versions = "*"
+files = [
+    {file = "razorpay-1.4.2-py3-none-any.whl", hash = "sha256:aaf525baebc5001e5c54ae317a372c3c17c81314cedcbbf71aa0a2d3419a9757"},
+    {file = "razorpay-1.4.2.tar.gz", hash = "sha256:0d812030ba29e776e66d1ceaacc31635810fde18b66ff2591e582eb651bb5131"},
+]
+
+[package.dependencies]
+requests = "*"
+
+[[package]]
 name = "requests"
 version = "2.32.3"
 description = "Python HTTP for Humans."
@@ -972,4 +986,4 @@ test = ["covdefaults (>=2.3)", "coverage (>=7.2.7)", "coverage-enable-subprocess
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "9aa283e0c4c3d5c27cbcf9e212aeb56ae2bea0890ceb60aa1d2cd79beca4a073"
+content-hash = "d7f9753be6a996c1a2af7399c0a535f79ba582d7524edadfb94f2b2e364d60ac"
