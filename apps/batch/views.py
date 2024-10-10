@@ -11,16 +11,17 @@ from rest_framework.views import APIView
 
 from abstract.views import CustomResponseMixin
 from config.live_video import MeritHubAPI
-from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial
+from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial, FeeStructure
 from .serializers.attendance_serializers import AttendanceSerializer
 from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSerializer, SubjectSerializer
 from .serializers.enrollment_serializers import EnrollmentSerializer, BatchStudentUserSerializer, \
     ListEnrollmentSerializer
+from .serializers.fee_serializers import FeeStructureSerializer
 from .serializers.liveclass_serializers import LiveClassSerializer, RetrieveLiveClassSerializer
 from .serializers.studymaterial_serializer import StudyMaterialSerializer
 
 
-class SubjectViewSet(viewsets.ModelViewSet):
+class SubjectViewSet(CustomResponseMixin):
     queryset = Subject.objects.all()
     serializer_class = SubjectSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
@@ -180,3 +181,8 @@ class CreateLiveClassView(APIView):
         live_class = api.schedule_class(user_id=self.request.user.id, class_data=class_data, batch=batch)
         serializer = RetrieveLiveClassSerializer(instance=live_class)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class FeeStructureViewSet(CustomResponseMixin):
+    queryset = FeeStructure.objects.all()
+    serializer_class = FeeStructureSerializer

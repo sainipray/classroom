@@ -27,6 +27,25 @@ class Subject(TimeStampedModel):
         return self.name
 
 
+class FeeStructure(TimeStampedModel):
+    structure_name = models.CharField(max_length=255, verbose_name="Structure Name")
+    fee_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Fee Amount")
+    installments = models.PositiveIntegerField(default=1, verbose_name="Number of Installments")
+    total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total Amount")
+
+    def save(self, **kwargs):
+        # Automatically calculate the total amount
+        self.total_amount = self.fee_amount * self.installments
+        super().save(**kwargs)
+
+    class Meta:
+        verbose_name = "Fee Structure"
+        verbose_name_plural = "Fee Structures"
+
+    def __str__(self):
+        return f"{self.structure_name} "
+
+
 class Batch(TimeStampedModel):
     name = models.CharField(max_length=255, verbose_name="Batch Name")
     batch_code = models.CharField(max_length=8, default=generate_batch_code, unique=True, verbose_name="Batch Code")
@@ -35,6 +54,8 @@ class Batch(TimeStampedModel):
     live_class_link = models.URLField(blank=True, null=True, verbose_name="Live Class Link")
     created_by = models.ForeignKey(User, verbose_name="Created By", on_delete=models.CASCADE)
     is_published = models.BooleanField(default=False, verbose_name="Is Published")
+    fee_structure = models.ForeignKey(FeeStructure, null=True, blank=True, verbose_name="Fee Structure",
+                                      on_delete=models.SET_NULL)
 
     class Meta:
         verbose_name = "Batch"
