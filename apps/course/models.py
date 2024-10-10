@@ -79,25 +79,63 @@ class Course(TimeStampedModel):
 
     @property
     def content(self):
-        folder_structure = []
-        for folder in self.folders.all():
+        # Define the file extensions for videos and images
+        VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv', 'webm'}
+        IMAGE_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff'}
+
+        # Initialize counts
+        counts = {
+            'videos': 0,
+            'images': 0
+        }
+
+        def fetch_folder_structure(folder):
+            nonlocal counts  # Allows access to the counts dictionary defined in the outer scope
+
             folder_data = {
                 'id': folder.id,
                 'title': folder.title,
-                'files': []
+                'files': [],
+                'subfolders': []
             }
             # Fetch files within the folder
             for file in folder.files.all():
+                # Determine the file extension
+                extension = file.document.name.rsplit('.', 1)[-1].lower()
+
+                # Increment counts based on file type
+                if extension in VIDEO_EXTENSIONS:
+                    counts['videos'] += 1
+                elif extension in IMAGE_EXTENSIONS:
+                    counts['images'] += 1
+
+                # Append file data
                 folder_data['files'].append({
                     'id': file.id,
                     'title': file.title,
                     'document': file.document.url,  # URL to access the file
                     'is_locked': file.is_locked
                 })
-            folder_structure.append(folder_data)
 
-        return folder_structure
+            # Recursively fetch subfolders
+            for subfolder in folder.folders.all():
+                folder_data['subfolders'].append(fetch_folder_structure(subfolder))
 
+            return folder_data
+
+        folder_structure = []
+        # Start from top-level folders (where parent is None)
+        for folder in self.folders.filter(parent__isnull=True):
+            folder_structure.append(fetch_folder_structure(folder))
+
+        # Prepare the final data with directory structure and counts
+        data = {
+            'directory': folder_structure,
+            'videos': counts['videos'],
+            'images': counts['images']
+        }
+
+        return data
     @property
     def categories_info(self):
         categories_data = []
@@ -249,3 +287,9 @@ class CoursePurchaseOrder(TimeStampedModel):
     student = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Student")
     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="Course")
     transaction = models.ForeignKey('payment.Transaction', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Order for {self.course.name} by {self.student.full_name} on {self.created}"
+
+    class Meta:
+        ordering = ['-created']

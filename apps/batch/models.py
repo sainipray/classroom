@@ -34,6 +34,7 @@ class Batch(TimeStampedModel):
     subject = models.ForeignKey(Subject, related_name="batches", verbose_name="Subject", on_delete=models.CASCADE)
     live_class_link = models.URLField(blank=True, null=True, verbose_name="Live Class Link")
     created_by = models.ForeignKey(User, verbose_name="Created By", on_delete=models.CASCADE)
+    is_published = models.BooleanField(default=False, verbose_name="Is Published")
 
     class Meta:
         verbose_name = "Batch"

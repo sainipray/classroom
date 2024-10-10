@@ -39,6 +39,18 @@ class BatchViewSet(CustomResponseMixin):
         self.perform_create(serializer)
         return Response(status=status.HTTP_201_CREATED, data={'message': "Successfully created"})
 
+    @action(detail=True, methods=['patch'])
+    def toggle_publish(self, request, pk=None):
+        try:
+            batch = self.get_object()  # Get the batch object by ID
+            batch.is_published = not batch.is_published  # Toggle the is_published field
+            batch.save()  # Save the updated object
+            return Response(
+                {'message': f"Batch {'published' if batch.is_published else 'unpublished'} successfully."},
+                status=status.HTTP_200_OK
+            )
+        except Batch.DoesNotExist:
+            return Response({'error': 'Batch not found.'}, status=status.HTTP_404_NOT_FOUND)
 
 class EnrollmentViewSet(CustomResponseMixin):
     serializer_class = EnrollmentSerializer

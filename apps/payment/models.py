@@ -1,5 +1,8 @@
+# apps/payment/models.py
+
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -11,6 +14,12 @@ class Transaction(models.Model):
         ('test_series', 'Test Series'),
     ]
 
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed')
+    ]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions')
     content_type = models.CharField(max_length=20, choices=CONTENT_CHOICES)
     content_id = models.PositiveIntegerField()  # Reference to Course, Batch, or Test Series ID
@@ -18,11 +27,7 @@ class Transaction(models.Model):
     transaction_id = models.CharField(max_length=255, unique=True)  # Razorpay Order ID
     payment_status = models.CharField(
         max_length=20,
-        choices=[
-            ('pending', 'Pending'),
-            ('completed', 'Completed'),
-            ('failed', 'Failed')
-        ],
+        choices=PAYMENT_STATUS_CHOICES,
         default='pending'
     )
 
@@ -34,6 +39,8 @@ class Transaction(models.Model):
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True,
                                        blank=True)  # Total amount after applying GST
     coupon = models.ForeignKey('coupon.Coupon', on_delete=models.SET_NULL, null=True, blank=True)
+
+    payment_id = models.CharField(max_length=255, null=True, blank=True)  # Razorpay Payment ID
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
