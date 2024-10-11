@@ -2,12 +2,12 @@
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.utils import timezone
+from django_extensions.db.models import TimeStampedModel
 
 User = get_user_model()
 
 
-class Transaction(models.Model):
+class Transaction(TimeStampedModel):
     CONTENT_CHOICES = [
         ('course', 'Course'),
         ('batch', 'Batch'),
@@ -38,27 +38,16 @@ class Transaction(models.Model):
     gst_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True,
                                        blank=True)  # Total amount after applying GST
+    platform_fees = models.DecimalField(max_digits=10, decimal_places=2, null=True,
+                                        blank=True)
+    internet_charges = models.DecimalField(max_digits=10, decimal_places=2, null=True,
+                                           blank=True)
     coupon = models.ForeignKey('coupon.Coupon', on_delete=models.SET_NULL, null=True, blank=True)
 
     payment_id = models.CharField(max_length=255, null=True, blank=True)  # Razorpay Payment ID
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def save(self, *args, **kwargs):
-        # Calculate effective price based on original price and discounts
-        if self.original_price is not None:
-            self.price_after_coupon = self.original_price - self.discount_applied
-            self.total_amount = self.price_after_coupon
-
-            if self.gst_percentage is not None:
-                gst_amount = (self.price_after_coupon * self.gst_percentage) / 100
-                self.total_amount += gst_amount  # Adding GST to the effective price
-
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'Transaction {self.transaction_id} for {self.content_type.capitalize()} {self.content_id}'
 
     class Meta:
-        ordering = ('-created_at',)
+        ordering = ('-created',)

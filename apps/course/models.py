@@ -109,6 +109,7 @@ class Course(TimeStampedModel):
                 elif extension in IMAGE_EXTENSIONS:
                     counts['images'] += 1
 
+                # TODO we don't need to show urls of each file that is locked or if student not purchased course
                 # Append file data
                 folder_data['files'].append({
                     'id': file.id,

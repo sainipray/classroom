@@ -35,14 +35,15 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         return attrs
 
     def create(self, validated_data):
+        request = self.context['request']
         students = validated_data.pop('students')
         enrollments = []
         for student_id in students:
             enrollment, created = Enrollment.objects.get_or_create(
                 batch=validated_data['batch'],
                 student_id=student_id,
-                defaults={'is_approved': validated_data.get('is_approved', False)}
-
+                is_approved=True,
+                approved_by=request.user
             )
             enrollments.append(enrollment)
 

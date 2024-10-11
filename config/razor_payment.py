@@ -23,9 +23,13 @@ class RazorpayService:
             content_id,
             user,
             original_price,
+            total_amount,
+            price_after_coupon,
             discount_applied,
+            platform_fees,
+            internet_charges,
             gst_percentage=0,
-            coupon=None
+            coupon=None,
     ):
         """
         Initiates a Razorpay transaction with optional coupon application.
@@ -43,14 +47,6 @@ class RazorpayService:
             Transaction: The created Transaction object.
         """
         try:
-            # Calculate price after discount
-            price_after_coupon = original_price - discount_applied
-
-            # Calculate GST amount
-            gst_amount = (price_after_coupon * gst_percentage) / 100 if gst_percentage else 0
-
-            # Calculate total amount to be charged
-            total_amount = price_after_coupon + gst_amount
 
             # Create Razorpay order
             payment_order = self.client.order.create({
@@ -71,9 +67,11 @@ class RazorpayService:
                     price_after_coupon=price_after_coupon,
                     gst_percentage=gst_percentage,
                     total_amount=total_amount,
+                    platform_fees=platform_fees,
+                    internet_charges=internet_charges,
                     coupon=coupon,
                     transaction_id=payment_order['id'],
-                    payment_status='pending'
+                    payment_status='pending',
                 )
 
             logger.info(f"Initiated transaction {transaction_record.transaction_id} for user {user.id}")

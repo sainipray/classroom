@@ -53,13 +53,14 @@ class BatchViewSet(CustomResponseMixin):
         except Batch.DoesNotExist:
             return Response({'error': 'Batch not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+
 class EnrollmentViewSet(CustomResponseMixin):
     serializer_class = EnrollmentSerializer
     queryset = Enrollment.objects.all()
     list_serializer_class = ListEnrollmentSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         enrollments = serializer.save()
         return Response({"enrollments": [enrollment.id for enrollment in enrollments]}, status=status.HTTP_201_CREATED)
@@ -98,6 +99,7 @@ class EnrollmentViewSet(CustomResponseMixin):
             return Response({"message": "Enrollment request rejected."}, status=status.HTTP_204_NO_CONTENT)
         except Enrollment.DoesNotExist:
             return Response({"error": "Enrollment not found."}, status=status.HTTP_404_NOT_FOUND)
+
 
 class LiveClassViewSet(viewsets.ModelViewSet):
     queryset = LiveClass.objects.all()

@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django_extensions.db.models import TimeStampedModel
 
@@ -63,16 +63,19 @@ class Coupon(TimeStampedModel):
 
     def apply_discount(self, original_price):
         """
-        Apply the coupon discount to the original price.
+        Apply the coupon discount to the original price and return both discounted price and discount amount.
         """
         if self.discount_type == 'fixed':
-            return max(original_price - self.discount_value, 0)
+            discount_amount = self.discount_value
         elif self.discount_type == 'percentage':
-            discount = original_price * (self.discount_value / 100)
+            discount_amount = original_price * (self.discount_value / 100)
             if self.max_discount_amount:
-                discount = min(discount, self.max_discount_amount)
-            return max(original_price - discount, 0)
-        return original_price
+                discount_amount = min(discount_amount, float(self.max_discount_amount))
+        else:
+            discount_amount = 0
+
+        discounted_price = max(float(original_price) - float(discount_amount), 0)
+        return discounted_price, discount_amount
 
     def is_valid(self):
         """
@@ -92,6 +95,11 @@ class Coupon(TimeStampedModel):
     def increment_usage(self):
         """
         Increment the total_applied count when a coupon is used.
+        Ensures thread safety using atomic transactions.
         """
-        self.total_applied += 1
-        self.save()
+        with transaction.atomic():
+            self.refresh_from_db()
+            if self.max_uses and self.total_applied >= self.max_uses:
+                raise ValueError("Coupon usage limit reached.")
+            self.total_applied += 1
+            self.save()
