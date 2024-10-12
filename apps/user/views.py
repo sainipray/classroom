@@ -14,12 +14,12 @@ from .schema_definitions import (
     login_api_view,
     phone_otp_verify_api_view,
     register_api_view,
-    student_profile_api_view,
+    user_profile_api_view,
 )
 from .serializers import (
     LoginSerializer,
     SignupSerializer,
-    StudentProfileSerializer,
+    UserProfileSerializer,
     VerifyOTPSerializer, CustomUserSerializer, StudentSerializer, StudentUserSerializer,
 )
 
@@ -112,24 +112,11 @@ class LoginAPIView(BaseSendOTPAPIView):
         )
 
 
-class StudentProfileAPIView(generics.RetrieveUpdateAPIView):
-    serializer_class = StudentProfileSerializer
-    permission_classes = (IsStudent,)
+class UserProfileAPIView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserProfileSerializer
 
     def get_object(self):
         return self.request.user
-
-    @student_profile_api_view
-    def get(self, request, *args, **kwargs):
-        return super().get(request, *args, **kwargs)
-
-    @student_profile_api_view
-    def put(self, request, *args, **kwargs):
-        return super().put(request, *args, **kwargs)
-
-    @student_profile_api_view
-    def patch(self, request, *args, **kwargs):
-        return super().patch(request, *args, **kwargs)
 
 
 class UserCreateListView(generics.ListCreateAPIView):

@@ -67,58 +67,15 @@ class LoginSerializer(serializers.Serializer):
         return value
 
 
-class StudentProfileSerializer(serializers.ModelSerializer):
-    phone_number = serializers.SerializerMethodField()
-    email = serializers.SerializerMethodField()
-    full_name = serializers.SerializerMethodField()
-
-    profile_photo = serializers.ImageField(required=False)
-    parent_profile_photo = serializers.ImageField(required=False)
-    x_result = serializers.FileField(required=False)
-    xii_result = serializers.FileField(required=False)
-    college_result = serializers.FileField(required=False)
-
+class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Student
+        model = CustomUser
         fields = [
             "full_name",
             "email",
             "phone_number",
-            "about",
-            "profile_photo",
-            "mother_name",
-            "father_name",
-            "occupation",
-            "parent_mobile_number",
-            "parent_email",
-            "parent_profile_photo",
-            "date_of_birth",
-            "gender",
-            "nationality",
-            "blood_group",
-            "permanent_address",
-            "permanent_address_pincode",
-            "correspondence_address",
-            "correspondence_address_pincode",
-            "school_name",
-            "college_name",
-            "marks_x",
-            "x_result",
-            "marks_xii",
-            "xii_result",
-            "marks_college",
-            "college_result",
+            'role'
         ]
-
-    def get_phone_number(self, obj):
-        return obj.user.phone_number
-
-    def get_email(self, obj):
-        return obj.user.email
-
-    def get_full_name(self, obj):
-        return obj.user.get_full_name()
-
 
 class CustomUserSerializer(serializers.ModelSerializer):
     phone_number = PhoneNumberField(region="IN")

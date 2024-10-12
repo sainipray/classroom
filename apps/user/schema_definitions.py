@@ -5,7 +5,7 @@ from drf_yasg.utils import swagger_auto_schema
 from .serializers import (
     LoginSerializer,
     SignupSerializer,
-    StudentProfileSerializer,
+    UserProfileSerializer,
     VerifyOTPSerializer,
 )
 
@@ -85,15 +85,15 @@ login_api_view = swagger_auto_schema(
 
 
 # Define response schema for student profile
-student_profile_response_schema = openapi.Response(
-    description="Successful response with student profile data",
-    schema=StudentProfileSerializer,
+user_profile_response_schema = openapi.Response(
+    description="Successful response with user profile data",
+    schema=UserProfileSerializer,
 )
 
-student_profile_api_view = swagger_auto_schema(
+user_profile_api_view = swagger_auto_schema(
     operation_description="Retrieve and update the authenticated student's profile",
     responses={
-        200: student_profile_response_schema,
+        200: user_profile_response_schema,
         400: "Bad Request",
         401: "Unauthorized",
     },
