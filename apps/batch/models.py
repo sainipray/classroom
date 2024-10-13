@@ -81,6 +81,41 @@ class Batch(TimeStampedModel):
                  'phone_number': enroll.student.phone_number.as_e164} for enroll in
                 self.enrollments.filter(is_approved=False)]
 
+    def get_installment_details_for_user(self, user):
+        """
+        Retrieves all installment details for the specified student.
+
+        Args:
+            user (User): The student for whom to retrieve installment details.
+
+        Returns:
+            List[Dict]: A list of dictionaries containing installment details.
+        """
+        if not self.fee_structure:
+            return []
+
+        installments = []
+        for installment_number in range(1, self.fee_structure.installments + 1):
+            try:
+                purchase_order = self.purchase_orders.get(student=user, installment_number=installment_number)
+                installment_info = {
+                    'installment_number': installment_number,
+                    'amount': float(purchase_order.amount),
+                    'is_paid': purchase_order.is_paid,
+                    'payment_date': purchase_order.payment_date.isoformat() if purchase_order.payment_date else None,
+                    'transaction_id': purchase_order.transaction.transaction_id if purchase_order.transaction else None
+                }
+            except BatchPurchaseOrder.DoesNotExist:
+                # Installment not yet purchased
+                installment_info = {
+                    'installment_number': installment_number,
+                    'amount': float(self.fee_structure.fee_amount),
+                    'is_paid': False,
+                    'payment_date': None,
+                    'transaction_id': None
+                }
+            installments.append(installment_info)
+        return installments
 
 class Enrollment(TimeStampedModel):
     batch = models.ForeignKey(Batch, related_name="enrollments", on_delete=models.CASCADE)
@@ -136,3 +171,20 @@ class StudyMaterial(TimeStampedModel):
     youtube_url = models.URLField(blank=True, null=True, verbose_name="YouTube URL")
     live_class_recording = models.ForeignKey(LiveClass, related_name="recordings", blank=True, null=True,
                                              on_delete=models.SET_NULL, verbose_name="Live Class Recording")
+
+
+class BatchPurchaseOrder(TimeStampedModel):
+    student = models.ForeignKey(User, related_name='batch_purchases', on_delete=models.CASCADE)
+    batch = models.ForeignKey('Batch', related_name='purchase_orders', on_delete=models.CASCADE)
+    transaction = models.ForeignKey('payment.Transaction', related_name='batch_purchase_orders', on_delete=models.CASCADE)
+    installment_number = models.PositiveIntegerField(default=1)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_paid = models.BooleanField(default=False)
+    payment_date = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Batch Purchase Order"
+        verbose_name_plural = "Batch Purchase Orders"
+
+    def __str__(self):
+        return f"BatchPurchaseOrder {self.id} - {self.batch.name} - Installment {self.installment_number}"

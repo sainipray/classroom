@@ -4,6 +4,7 @@ from decimal import Decimal
 import razorpay
 from django.conf import settings
 from django.db import transaction as db_transaction
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny
@@ -11,10 +12,11 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from abstract.views import ReadOnlyCustomResponseMixin
+from apps.batch.models import BatchPurchaseOrder, Batch, Enrollment
 from apps.course.models import Course, CoursePurchaseOrder
 from apps.payment.models import Transaction
 from apps.payment.serializers import VerifyPaymentSerializer, TransactionSerializer, PurchaseCourseSerializer, \
-    ApplyCouponSerializer
+    ApplyCouponSerializer, PurchaseBatchSerializer, PayInstallmentSerializer
 from config.razor_payment import RazorpayService
 
 logger = logging.getLogger(__name__)
@@ -22,23 +24,25 @@ logger = logging.getLogger(__name__)
 
 def final_price_with_other_expenses_and_gst(original_price, discounted_price=None):
     # Define other fees (these could be defined in settings or calculated)
-    internet_charges = getattr(settings, 'INTERNET_CHARGES', 10)  # Example fixed internet charges
-    platform_fees = getattr(settings, 'PLATFORM_FEE', 10)  # Example fixed platform fee
+    internet_charges = getattr(settings, 'INTERNET_CHARGES', Decimal('10.00'))  # Example fixed internet charges
+    platform_fees = getattr(settings, 'PLATFORM_FEE', Decimal('10.00'))  # Example fixed platform fee
     # Calculate GST
-    gst_percentage = getattr(settings, 'GST_PERCENTAGE', 18.0)  # Define GST_PERCENTAGE in settings.py
+    gst_percentage = getattr(settings, 'GST_PERCENTAGE', Decimal('18.0'))  # Define GST_PERCENTAGE in settings.py
     if discounted_price:
-        gst_amount = Decimal(discounted_price + internet_charges + platform_fees) * Decimal(gst_percentage) / 100
-        total_amount = discounted_price + gst_amount + internet_charges + platform_fees
+        gst_amount = (Decimal(discounted_price) + internet_charges + platform_fees) * Decimal(gst_percentage) / Decimal(
+            '100')
+        total_amount = Decimal(discounted_price) + gst_amount + internet_charges + platform_fees
     else:
-        gst_amount = Decimal(original_price + internet_charges + platform_fees) * Decimal(gst_percentage) / 100
-        total_amount = original_price + gst_amount + internet_charges + platform_fees
+        gst_amount = (Decimal(original_price) + internet_charges + platform_fees) * Decimal(gst_percentage) / Decimal(
+            '100')
+        total_amount = Decimal(original_price) + gst_amount + internet_charges + platform_fees
     data = {
-        "original_price": original_price,
+        "original_price": Decimal(original_price),
         "gst_percentage": gst_percentage,
-        "gst_amount": gst_amount,
+        "gst_amount": gst_amount.quantize(Decimal('0.01')),
         "internet_charges": internet_charges,
         "platform_fees": platform_fees,
-        "total_amount": total_amount
+        "total_amount": total_amount.quantize(Decimal('0.01'))
     }
     return data
 
@@ -65,6 +69,30 @@ class GetCoursePricingView(APIView):
         response_data = {
             "course_id": course.id,
             "course_name": course.name,
+        }
+        response_data.update(final_price_responses)
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+class GetBatchPricingView(APIView):
+    """
+    API view to get pricing details for a specific batch including GST and additional fees.
+    """
+
+    def get(self, request, batch_id):
+        batch = get_object_or_404(Batch, id=batch_id, is_published=True)  # Ensure to check if the batch is active
+
+        # Original price (assuming first installment is stored in a field called `first_installment_price`)
+        original_price = batch.fee_structure.fee_amount or 0
+
+        # Get final pricing details including GST and other fees
+        final_price_responses = final_price_with_other_expenses_and_gst(original_price)
+
+        # Construct the response data
+        response_data = {
+            "batch_id": batch.id,
+            "batch_name": batch.name,
         }
         response_data.update(final_price_responses)
 
@@ -104,7 +132,7 @@ class PurchaseCourseView(APIView):
         try:
             razorpay_service = RazorpayService()
             transaction = razorpay_service.initiate_transaction(
-                content_type='course',
+                content_type=Transaction.ContentType.COURSE,
                 content_id=course.id,
                 user=request.user,
                 discount_applied=discount_applied,
@@ -178,7 +206,7 @@ class VerifyPaymentView(APIView):
             content_type = verified_transaction.content_type
             content_id = verified_transaction.content_id
 
-            if content_type == 'course':
+            if content_type == Transaction.ContentType.COURSE:
                 course = get_object_or_404(Course, id=content_id)
                 try:
                     # Create CoursePurchaseOrder
@@ -205,10 +233,41 @@ class VerifyPaymentView(APIView):
                         # Optionally, handle this scenario (e.g., notify admin)
 
             # TODO: Handle other content types like 'batch' and 'test_series'
-            elif content_type == 'batch':
-                # Implement batch purchase logic
-                pass
-            elif content_type == 'test_series':
+            elif content_type == Transaction.ContentType.BATCH:
+                # Handle batch installment verification
+                try:
+                    purchase_order = BatchPurchaseOrder.objects.get(transaction=verified_transaction)
+                except BatchPurchaseOrder.DoesNotExist:
+                    logger.error(f"No BatchPurchaseOrder found for transaction {razorpay_order_id}")
+                    return Response({"error": "Invalid transaction."}, status=status.HTTP_400_BAD_REQUEST)
+
+                if purchase_order.is_paid:
+                    logger.info(
+                        f"Installment {purchase_order.installment_number} already paid for transaction {razorpay_order_id}.")
+                    return Response({"status": "Payment already verified and installment marked as paid."},
+                                    status=status.HTTP_200_OK)
+
+                # Mark the installment as paid
+                purchase_order.is_paid = True
+                purchase_order.payment_date = timezone.now()
+                purchase_order.save()
+
+                logger.info(
+                    f"Installment {purchase_order.installment_number} for batch {purchase_order.batch.id} marked as paid.")
+
+                # Enroll the student in the batch
+                if not Enrollment.objects.filter(batch=purchase_order.batch, student=request.user).exists():
+                    Enrollment.objects.create(
+                        batch=purchase_order.batch,
+                        student=request.user,
+                        is_approved=True  # Set approval status as needed
+                    )
+                    logger.info(f"Student {request.user.id} enrolled in batch {purchase_order.batch.id}.")
+
+                return Response({"status": "Payment verified and installment marked as paid."},
+                                status=status.HTTP_200_OK)
+
+            elif content_type == Transaction.ContentType.TEST_SERIES:
                 # Implement test series purchase logic
                 pass
             else:
@@ -301,10 +360,128 @@ class RazorpayWebhookView(APIView):
                     razorpay_payment_id=razorpay_payment_id,
                     razorpay_signature=signature  # Adjust as needed
                 )
-                return Response({"status": "success"}, status=status.HTTP_200_OK)
             except ValueError as e:
                 logger.error(f"Webhook payment verification failed: {str(e)}")
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+            if verified_transaction.payment_status == 'completed':
+                if verified_transaction.content_type == 'course':
+                    # Existing course verification logic
+                    pass  # Existing code
+                elif verified_transaction.content_type == 'batch_installment':
+                    # Handle batch installment verification
+                    try:
+                        purchase_order = BatchPurchaseOrder.objects.get(transaction=verified_transaction)
+                    except BatchPurchaseOrder.DoesNotExist:
+                        logger.error(f"No BatchPurchaseOrder found for transaction {razorpay_order_id}")
+                        return Response({"error": "Invalid transaction."}, status=status.HTTP_400_BAD_REQUEST)
+
+                    if not purchase_order.is_paid:
+                        purchase_order.is_paid = True
+                        purchase_order.payment_date = timezone.now()
+                        purchase_order.save()
+                        logger.info(
+                            f"Installment {purchase_order.installment_number} for batch {purchase_order.batch.id} marked as paid via webhook.")
+                else:
+                    logger.error(
+                        f"Invalid content type '{verified_transaction.content_type}' for transaction {razorpay_order_id}")
+                    return Response({"error": "Invalid content type."}, status=status.HTTP_400_BAD_REQUEST)
+
+                return Response({"status": "success"}, status=status.HTTP_200_OK)
+
         # Handle other event types if necessary
         return Response({"status": "ignored"}, status=status.HTTP_200_OK)
+
+
+class PurchaseBatchView(APIView):
+    """
+    API view to initiate a batch purchase by creating a Razorpay order for a specific installment.
+    If installment_number is not provided, it initiates payment for the first unpaid installment by default.
+    """
+
+    @db_transaction.atomic
+    def post(self, request):
+        serializer = PurchaseBatchSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        batch = serializer.validated_data['batch']
+        fee_structure = serializer.validated_data['fee_structure']
+        installment_number = serializer.validated_data.get('installment_number')
+
+        # If installment_number is not provided, find the first unpaid installment
+        if not installment_number:
+            try:
+                first_unpaid_order = BatchPurchaseOrder.objects.filter(
+                    student=request.user,
+                    batch=batch,
+                    is_paid=False
+                ).order_by('installment_number').first()
+                if first_unpaid_order:
+                    installment_number = first_unpaid_order.installment_number
+                else:
+                    # If no existing purchase orders, start with installment 1
+                    installment_number = 1
+            except BatchPurchaseOrder.DoesNotExist:
+                installment_number = 1
+
+        fee_amount = fee_structure.fee_amount
+        original_price = fee_amount
+
+        # Calculate final price with fees and GST
+        final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price))
+
+        try:
+            razorpay_service = RazorpayService()
+            transaction = razorpay_service.initiate_transaction(
+                content_type=Transaction.ContentType.BATCH,
+                content_id=batch.id,
+                user=request.user,
+                discount_applied=0,  # Adjust if discounts are applied
+                coupon=None,  # Adjust if coupons are used
+                price_after_coupon=final_price_responses['total_amount'],
+                total_amount=final_price_responses['total_amount'],
+                original_price=final_price_responses['original_price'],
+                gst_percentage=final_price_responses['gst_percentage'],
+                platform_fees=final_price_responses['platform_fees'],
+                internet_charges=final_price_responses['internet_charges'],
+            )
+        except Exception as e:
+            logger.error(f"Failed to initiate transaction for user {request.user.id}: {str(e)}")
+            return Response({"error": "Failed to initiate transaction. Please try again later."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        try:
+            BatchPurchaseOrder.objects.create(
+                student=request.user,
+                batch=batch,
+                transaction=transaction,
+                installment_number=installment_number,
+                amount=final_price_responses['total_amount']
+            )
+            logger.info(
+                f"BatchPurchaseOrder created for transaction {transaction.transaction_id} by user {request.user.id}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to create BatchPurchaseOrder: {str(e)}")
+            return Response({"error": "Failed to create purchase order."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        response_data = {
+            "order_id": transaction.transaction_id,
+            "amount": float(transaction.amount),
+            "currency": "INR",
+            "name": getattr(settings, 'WEB_SITE_NAME', 'Your Site Name'),
+            "description": f"Payment for Batch: {batch.name} - Installment {installment_number}",
+            "image": getattr(settings, 'WEB_SITE_IMAGE', ""),
+            "prefill": {
+                "name": request.user.full_name,
+                "email": request.user.email,
+                "contact": request.user.phone_number.as_e164
+            }
+        }
+
+        logger.info(
+            f"Transaction {transaction.transaction_id} initiated for batch {batch.id}, installment {installment_number} by user {request.user.id}"
+        )
+        return Response(response_data, status=status.HTTP_200_OK)
+

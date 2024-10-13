@@ -8,26 +8,24 @@ User = get_user_model()
 
 
 class Transaction(TimeStampedModel):
-    CONTENT_CHOICES = [
-        ('course', 'Course'),
-        ('batch', 'Batch'),
-        ('test_series', 'Test Series'),
-    ]
+    class ContentType(models.TextChoices):
+        COURSE = 'course', 'Course'
+        BATCH = 'batch', 'Batch'
+        TEST_SERIES = 'test_series', 'Test Series'
 
-    PAYMENT_STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('completed', 'Completed'),
-        ('failed', 'Failed')
-    ]
+    class PaymentStatus(models.TextChoices):
+        PENDING = 'pending', 'Pending'
+        COMPLETED = 'completed', 'Completed'
+        FAILED = 'failed', 'Failed'
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions')
-    content_type = models.CharField(max_length=20, choices=CONTENT_CHOICES)
+    content_type = models.CharField(max_length=20, choices=ContentType.choices)
     content_id = models.PositiveIntegerField()  # Reference to Course, Batch, or Test Series ID
     amount = models.DecimalField(max_digits=10, decimal_places=2)  # Total amount paid
     transaction_id = models.CharField(max_length=255, unique=True)  # Razorpay Order ID
     payment_status = models.CharField(
         max_length=20,
-        choices=PAYMENT_STATUS_CHOICES,
+        choices=PaymentStatus.choices,
         default='pending'
     )
 

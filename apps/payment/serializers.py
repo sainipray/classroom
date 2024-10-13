@@ -1,7 +1,9 @@
 from django.utils import timezone
 from rest_framework import serializers
+from rest_framework.generics import get_object_or_404
 
 from .models import Transaction
+from ..batch.models import Batch, BatchPurchaseOrder
 from ..coupon.models import Coupon
 from ..course.models import Course
 
@@ -118,4 +120,50 @@ class ApplyCouponSerializer(serializers.Serializer):
             course = Course.objects.get(id=course_id)
             if coupon.courses.exists() and course not in coupon.courses.all():
                 raise serializers.ValidationError("This coupon is not applicable to the selected course.")
+        return attrs
+
+
+class PurchaseBatchSerializer(serializers.Serializer):
+    batch_id = serializers.IntegerField()
+    installment_number = serializers.IntegerField(required=False)  # Make it optional
+
+    def validate(self, attrs):
+        batch_id = attrs.get('batch_id')
+        installment_number = attrs.get('installment_number')
+
+        batch = get_object_or_404(Batch, id=batch_id, is_published=True)
+        fee_structure = batch.fee_structure
+
+        if not fee_structure:
+            raise serializers.ValidationError("Batch does not have a fee structure.")
+
+        if installment_number:
+            if installment_number < 1 or installment_number > fee_structure.installments:
+                raise serializers.ValidationError("Invalid installment number.")
+
+            # Check if the installment has already been purchased
+            if BatchPurchaseOrder.objects.filter(
+                student=self.context['request'].user,
+                batch=batch,
+                installment_number=installment_number
+            ).exists():
+                raise serializers.ValidationError(f"Installment {installment_number} has already been purchased.")
+
+        attrs['batch'] = batch
+        attrs['fee_structure'] = fee_structure
+        return attrs
+
+class PayInstallmentSerializer(serializers.Serializer):
+    purchase_order_id = serializers.IntegerField()
+
+    def validate(self, attrs):
+        purchase_order_id = attrs.get('purchase_order_id')
+        user = self.context['request'].user
+
+        purchase_order = get_object_or_404(BatchPurchaseOrder, id=purchase_order_id, student=user)
+
+        if purchase_order.is_paid:
+            raise serializers.ValidationError("This installment has already been paid.")
+
+        attrs['purchase_order'] = purchase_order
         return attrs
