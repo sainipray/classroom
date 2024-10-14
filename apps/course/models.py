@@ -13,6 +13,7 @@ class Category(TimeStampedModel, TitleSlugDescriptionModel, ActivatorModel):
     class Meta:
         verbose_name = "Category"
         verbose_name_plural = "Categories"
+        ordering = ('-created',)
 
     def __str__(self):
         return self.title
@@ -29,6 +30,7 @@ class Subcategory(TimeStampedModel, TitleSlugDescriptionModel, ActivatorModel):
     class Meta:
         verbose_name = "Subcategory"
         verbose_name_plural = "Subcategories"
+        ordering = ('-created',)
 
     def __str__(self):
         return self.title
@@ -76,6 +78,9 @@ class Course(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
+    class Meta:
+        ordering = ('-created',)
 
     @property
     def content(self):
@@ -181,6 +186,7 @@ class CourseCategorySubCategory(TimeStampedModel):
         unique_together = ('course', 'category')
         verbose_name = "Course Category and Subcategory"
         verbose_name_plural = "Course Categories and Subcategories"
+        ordering = ('-created',)
 
     def __str__(self):
         return f"{self.course} - {self.category} - {', '.join(self.subcategories)}"
@@ -194,6 +200,9 @@ class Folder(TimeStampedModel):
     def __str__(self):
         return self.title
 
+    class Meta:
+        ordering = ('-created',)
+
 
 class File(TimeStampedModel):
     folder = models.ForeignKey(Folder, related_name="files", on_delete=models.CASCADE)
@@ -203,6 +212,9 @@ class File(TimeStampedModel):
 
     def __str__(self):
         return self.title
+
+    class Meta:
+        ordering = ('-created',)
 
     def save(self, **kwargs):
         # Automatically set the title from the document file name, if title is empty
@@ -228,7 +240,6 @@ class Assignment(TimeStampedModel):
         ordering = ['due_date']
         verbose_name = "Assignment"
         verbose_name_plural = "Assignments"
-
     def __str__(self):
         return self.title
 
@@ -293,4 +304,5 @@ class CoursePurchaseOrder(TimeStampedModel):
         return f"Order for {self.course.name} by {self.student.full_name} on {self.created}"
 
     class Meta:
-        ordering = ['-created']
+        ordering = ('-created',)
+

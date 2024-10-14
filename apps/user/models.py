@@ -153,6 +153,8 @@ class Student(TimeStampedModel):
     def __str__(self):
         return self.user.full_name
 
+    class Meta:
+        ordering = ('-created',)
 
 class Instructor(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='instructor', null=True, blank=True)
@@ -180,6 +182,7 @@ class DeviceSession(models.Model):
         unique_together = ('user', 'device_type')
         verbose_name = 'Device Session'
         verbose_name_plural = 'Device Sessions'
+        ordering = ('-created_at',)
 
     def __str__(self):
         return f"{self.user} - {self.device_type}"

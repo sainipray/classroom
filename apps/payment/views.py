@@ -16,7 +16,7 @@ from apps.batch.models import BatchPurchaseOrder, Batch, Enrollment
 from apps.course.models import Course, CoursePurchaseOrder
 from apps.payment.models import Transaction
 from apps.payment.serializers import VerifyPaymentSerializer, TransactionSerializer, PurchaseCourseSerializer, \
-    ApplyCouponSerializer, PurchaseBatchSerializer, PayInstallmentSerializer
+    ApplyCouponSerializer, PurchaseBatchSerializer
 from config.razor_payment import RazorpayService
 
 logger = logging.getLogger(__name__)
@@ -126,9 +126,10 @@ class PurchaseCourseView(APIView):
             # Apply discount using the enhanced apply_discount method
             price_after_coupon, discount_applied = coupon.apply_discount(original_price)
 
-        final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price),
-                                                                        Decimal(price_after_coupon))
-
+            final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price),
+                                                                            Decimal(price_after_coupon))
+        else:
+            final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price))
         try:
             razorpay_service = RazorpayService()
             transaction = razorpay_service.initiate_transaction(
@@ -484,4 +485,3 @@ class PurchaseBatchView(APIView):
             f"Transaction {transaction.transaction_id} initiated for batch {batch.id}, installment {installment_number} by user {request.user.id}"
         )
         return Response(response_data, status=status.HTTP_200_OK)
-

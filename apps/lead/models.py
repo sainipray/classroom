@@ -38,6 +38,7 @@ class Lead(TimeStampedModel):
     class Meta:
         verbose_name = "Lead"
         verbose_name_plural = "Leads"
+        ordering = ('-created',)
 
     def __str__(self):
         return f"{self.student_name} - {self.enquiry_status}"

@@ -22,6 +22,7 @@ class Subject(TimeStampedModel):
     class Meta:
         verbose_name = "Subject"
         verbose_name_plural = "Subjects"
+        ordering = ('-created',)
 
     def __str__(self):
         return self.name
@@ -60,7 +61,7 @@ class Batch(TimeStampedModel):
     class Meta:
         verbose_name = "Batch"
         verbose_name_plural = "Batches"
-        get_latest_by = 'modified'
+        ordering = ('-created',)
 
     def __str__(self):
         return self.name
@@ -127,6 +128,7 @@ class Enrollment(TimeStampedModel):
         unique_together = ('batch', 'student')
         verbose_name = "Enrollment"
         verbose_name_plural = "Enrollments"
+        ordering = ('-created',)
 
     def __str__(self):
         return f"{self.student} in {self.batch}"
@@ -145,6 +147,7 @@ class LiveClass(TimeStampedModel):
     class Meta:
         verbose_name = "Live Class"
         verbose_name_plural = "Live Classes"
+        ordering = ('-created',)
 
     def __str__(self):
         return f"Live Class for {self.batch} on {self.date}"
@@ -159,6 +162,7 @@ class Attendance(TimeStampedModel):
         unique_together = ('student', 'live_class')
         verbose_name = "Attendance"
         verbose_name_plural = "Attendances"
+        ordering = ('-created',)
 
     def __str__(self):
         return f"{self.student} - {self.live_class} - {'Present' if self.attended else 'Absent'}"
@@ -171,6 +175,11 @@ class StudyMaterial(TimeStampedModel):
     youtube_url = models.URLField(blank=True, null=True, verbose_name="YouTube URL")
     live_class_recording = models.ForeignKey(LiveClass, related_name="recordings", blank=True, null=True,
                                              on_delete=models.SET_NULL, verbose_name="Live Class Recording")
+
+    class Meta:
+        verbose_name = "Study Material"
+        verbose_name_plural = "Study Material"
+        ordering = ('-created',)
 
 
 class BatchPurchaseOrder(TimeStampedModel):
@@ -185,6 +194,7 @@ class BatchPurchaseOrder(TimeStampedModel):
     class Meta:
         verbose_name = "Batch Purchase Order"
         verbose_name_plural = "Batch Purchase Orders"
+        ordering = ('-created',)
 
     def __str__(self):
         return f"BatchPurchaseOrder {self.id} - {self.batch.name} - Installment {self.installment_number}"

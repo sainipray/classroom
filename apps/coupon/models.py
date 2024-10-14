@@ -45,7 +45,7 @@ class Coupon(TimeStampedModel):
     class Meta:
         verbose_name = "Coupon"
         verbose_name_plural = "Coupons"
-        ordering = ['-created']  # Orders by most recently created
+        ordering = ('-created',)  # Orders by most recently created
         indexes = [
             models.Index(fields=['code']),  # Index on coupon code
             models.Index(fields=['start_datetime', 'end_datetime']),  # Index on start and end datetime
