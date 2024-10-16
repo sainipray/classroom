@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.batch.models import Batch, Subject
+from apps.batch.models import Batch, Subject, Folder, File
 from apps.batch.serializers.fee_serializers import FeeStructureSerializer
 from apps.user.serializers import CustomUserSerializer
 
@@ -18,7 +18,7 @@ class BatchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Batch
-        fields = ['name', 'start_date', 'subject', 'created_by', 'batch_code', 'fee_structure']
+        fields = ['name', 'start_date', 'subject', 'created_by', 'batch_code', 'fee_structure', 'thumbnail']
 
     def create(self, validated_data):
         # The validated data doesn't contain `created_by` yet, so we add it manually.
@@ -34,6 +34,7 @@ class RetrieveBatchSerializer(serializers.ModelSerializer):
     enrolled_students = serializers.ReadOnlyField()
     student_join_request = serializers.ReadOnlyField()
     fee_structure = FeeStructureSerializer(read_only=True)
+
     class Meta:
         model = Batch
         fields = '__all__'
@@ -48,3 +49,15 @@ class ListBatchSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class FolderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Folder
+        fields = ['id', 'batch', 'title', 'parent', 'created']
+
+
+class FileSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = File
+        fields = ['id', 'title', 'folder', 'url', 'created']

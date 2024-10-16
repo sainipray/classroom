@@ -11,14 +11,16 @@ from rest_framework.views import APIView
 
 from abstract.views import CustomResponseMixin
 from config.live_video import MeritHubAPI
-from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial, FeeStructure
+from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial, FeeStructure, Folder, File
 from .serializers.attendance_serializers import AttendanceSerializer
-from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSerializer, SubjectSerializer
+from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSerializer, SubjectSerializer, \
+    FolderSerializer, FileSerializer
 from .serializers.enrollment_serializers import EnrollmentSerializer, BatchStudentUserSerializer, \
     ListEnrollmentSerializer
 from .serializers.fee_serializers import FeeStructureSerializer
 from .serializers.liveclass_serializers import LiveClassSerializer, RetrieveLiveClassSerializer
 from .serializers.studymaterial_serializer import StudyMaterialSerializer
+from ..utils.functions import merge_and_sort_items
 
 
 class SubjectViewSet(CustomResponseMixin):
@@ -33,6 +35,8 @@ class BatchViewSet(CustomResponseMixin):
     serializer_class = BatchSerializer
     retrieve_serializer_class = RetrieveBatchSerializer
     list_serializer_class = RetrieveBatchSerializer
+    filter_backends = (DjangoFilterBackend, SearchFilter)
+    search_fields = ('name',)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, context={'request': request})
@@ -52,6 +56,95 @@ class BatchViewSet(CustomResponseMixin):
             )
         except Batch.DoesNotExist:
             return Response({'error': 'Batch not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post'], url_path='create-folder')
+    def create_folder(self, request, pk=None):
+        batch = self.get_object()
+        request.data['batch'] = batch.id  # Set the batch ID
+        serializer = FolderSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=True, methods=['post'], url_path='folders/(?P<folder_id>[^/.]+)/create-file')
+    def create_file(self, request, pk, folder_id=None):
+        # If no folder_id is provided, default to the root (Home) folder
+        if folder_id is None:
+            # Get or create the Home folder
+            home_folder, created = Folder.objects.get_or_create(title='Home', batch=self.get_object())
+            folder = home_folder
+        else:
+            folder = Folder.objects.get(id=folder_id)  # Fetch the folder
+
+        request.data['folder'] = folder.id  # Set the folder ID
+        serializer = FileSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    def build_breadcrumb(self, folder):
+        breadcrumb = []
+        current_folder = folder
+        while current_folder is not None:
+            breadcrumb.append({'id': current_folder.id, 'title': current_folder.title})
+            current_folder = current_folder.parent  # Traverse up to the parent folder
+
+        # Reverse the breadcrumb list to have the root folder at the start
+        breadcrumb.reverse()
+        return breadcrumb
+
+    @action(detail=True, methods=['get'], url_path='folder-structure')
+    def get_folder_structure(self, request, pk=None):
+        batch = self.get_object()
+        folder_id = request.query_params.get('folder_id')  # Get folder ID from query parameters
+
+        if folder_id:
+            try:
+                folder = Folder.objects.get(id=folder_id, batch=batch)
+            except Folder.DoesNotExist:
+                return Response({'detail': 'Folder not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Get files (files) of the current folder
+            files = File.objects.filter(folder=folder).order_by('created')
+            file_serializer = FileSerializer(files, many=True)
+
+            # Get immediate subfolders
+            subfolders = Folder.objects.filter(parent=folder).order_by('created')
+            subfolder_serializer = FolderSerializer(subfolders, many=True)
+
+            # Use the utility function to merge and sort
+            merged_structure = merge_and_sort_items(subfolder_serializer.data, file_serializer.data)
+            breadcrumb = self.build_breadcrumb(folder)
+
+            folder_structure = {
+                'id': folder.id,
+                'title': folder.title,
+                'items': merged_structure
+            }
+        else:
+            # If no folder_id is provided, return the root folder structure
+            root_folder, _ = Folder.objects.get_or_create(batch=batch, parent__isnull=True, title='Home')
+
+            # Get files (files) of the current folder
+            file_serializer = FileSerializer(root_folder.files.all(), many=True)
+
+            # Get immediate subfolders
+            subfolder_serializer = FolderSerializer(root_folder.folders.all(), many=True)
+
+            # Use the utility function to merge and sort
+            merged_structure = merge_and_sort_items(subfolder_serializer.data, file_serializer.data)
+            breadcrumb = [{'id': root_folder.id, 'title': root_folder.title}]
+
+            folder_structure = {
+                'id': root_folder.id,
+                'title': root_folder.title,
+                'items': merged_structure
+            }
+
+        return Response({'batch_id': batch.id, 'folder_structure': folder_structure, 'breadcrumb': breadcrumb},
+                        status=status.HTTP_200_OK)
+
 
 
 class EnrollmentViewSet(CustomResponseMixin):

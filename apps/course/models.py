@@ -106,7 +106,7 @@ class Course(TimeStampedModel):
             # Fetch files within the folder
             for file in folder.files.all():
                 # Determine the file extension
-                extension = file.document.name.rsplit('.', 1)[-1].lower()
+                extension = file.url.name.rsplit('.', 1)[-1].lower()
 
                 # Increment counts based on file type
                 if extension in VIDEO_EXTENSIONS:
@@ -119,7 +119,7 @@ class Course(TimeStampedModel):
                 folder_data['files'].append({
                     'id': file.id,
                     'title': file.title,
-                    'document': file.document.url,  # URL to access the file
+                    'url': file.url.url,  # URL to access the file
                     'is_locked': file.is_locked
                 })
 
@@ -207,7 +207,7 @@ class Folder(TimeStampedModel):
 class File(TimeStampedModel):
     folder = models.ForeignKey(Folder, related_name="files", on_delete=models.CASCADE)
     title = models.CharField(max_length=255, verbose_name="Lecture Title")
-    document = models.FileField(upload_to='videos/', verbose_name="Lecture Video")
+    url = models.FileField(upload_to='videos/', verbose_name="Lecture Video")
     is_locked = models.BooleanField(default=False, verbose_name="Is Locked")
 
     def __str__(self):
@@ -218,8 +218,8 @@ class File(TimeStampedModel):
 
     def save(self, **kwargs):
         # Automatically set the title from the document file name, if title is empty
-        if not self.title and self.document:
-            self.title = self.document.name.rsplit('/', 1)[-1]  # Get the file name only
+        if not self.title and self.url:
+            self.title = self.url.name.rsplit('/', 1)[-1]  # Get the file name only
         super(File, self).save(**kwargs)
 
 

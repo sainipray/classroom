@@ -11,7 +11,7 @@ from config.razor_payment import RazorpayService
 from .models import Category, Subcategory, Course, Folder, File
 from .serializers import CategorySerializer, SubcategorySerializer, CourseSerializer, CoursePriceUpdateSerializer, \
     ListCourseSerializer, FolderSerializer, FileSerializer
-from .utils import merge_and_sort_items
+from ..utils.functions import merge_and_sort_items
 
 
 class CategoryViewSet(ModelViewSet):

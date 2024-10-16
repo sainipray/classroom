@@ -1,4 +1,6 @@
 # accounts/views.py
+from datetime import timedelta
+
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets
@@ -7,14 +9,12 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from config.permissions import IsStudent
 from config.sms.textlocal import LOGIN_OTP_KEY, SIGNUP_OTP_KEY, SMSManager
 from .models import CustomUser, Roles
 from .schema_definitions import (
     login_api_view,
     phone_otp_verify_api_view,
     register_api_view,
-    user_profile_api_view,
 )
 from .serializers import (
     LoginSerializer,
@@ -122,6 +122,8 @@ class UserProfileAPIView(generics.RetrieveUpdateAPIView):
 class UserCreateListView(generics.ListCreateAPIView):
     queryset = CustomUser.objects.exclude(role=Roles.STUDENT)
     serializer_class = CustomUserSerializer
+    filter_backends = (DjangoFilterBackend, SearchFilter)
+    search_fields = ('full_name', 'email', 'phone_number')
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -131,9 +133,25 @@ class UserCreateListView(generics.ListCreateAPIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     # def list(self, request, *args, **kwargs):
-    #     queryset = self.get_queryset()
-    #     serializer = self.get_serializer(queryset, many=True)
-    #     return Response(serializer.data)
+    #     queryset = self.filter_queryset(self.get_queryset())
+    #
+    #     page = self.paginate_queryset(queryset)
+    #     serializer = self.get_serializer(page, many=True)
+    #     total_users = queryset.count()
+    #     active_users = queryset.filter(is_active=True).count()
+    #     new_enrollments_last_week = queryset.filter(
+    #         date_joined__gte=timezone.now() - timedelta(days=7)
+    #     ).count()
+    #     inactive_users = queryset.filter(is_active=False).count()
+    #     response_data = self.get_paginated_response(serializer.data)
+    #
+    #     response_data.data.update({
+    #         "total_users": total_users,
+    #         "active_users": active_users,
+    #         "new_enrollments_last_week": new_enrollments_last_week,
+    #         "inactive_users": inactive_users,
+    #     })
+    #     return response_data
 
 
 class StudentViewSet(viewsets.ModelViewSet):
@@ -156,4 +174,3 @@ class StudentViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response({"message": "Student information Updated"}, status=status.HTTP_200_OK)
-

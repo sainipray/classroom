@@ -9,6 +9,7 @@ class BatchSerializer(serializers.ModelSerializer):
     fee_structure = FeeStructureSerializer(read_only=True)
     subject = serializers.ReadOnlyField(source='subject.name')
     installment_details = serializers.SerializerMethodField()
+
     class Meta:
         model = Batch
         fields = ['id', 'name', 'batch_code', 'start_date', 'subject', 'live_class_link',
@@ -21,5 +22,10 @@ class BatchSerializer(serializers.ModelSerializer):
             return obj.get_installment_details_for_user(user)
         return []
 
+
 class RetrieveBatchSerializer(BatchSerializer):
-    pass
+    content = serializers.ReadOnlyField()
+
+    class Meta:
+        model = Batch
+        fields = '__all__'
