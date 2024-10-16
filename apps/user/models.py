@@ -20,6 +20,7 @@ class CustomUserManager(BaseUserManager):
         if not full_name:
             raise ValueError(_("The Full name field must be set"))
         email = self.normalize_email(email)
+        extra_fields.setdefault("is_active", True) # Set always active for any user
         user = self.model(
             email=email, phone_number=phone_number, full_name=full_name, **extra_fields
         )

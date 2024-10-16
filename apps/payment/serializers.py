@@ -15,10 +15,14 @@ class VerifyPaymentSerializer(serializers.Serializer):
 
 
 class TransactionSerializer(serializers.ModelSerializer):
+    student_name = serializers.ReadOnlyField()
+    content_name = serializers.ReadOnlyField()
+
     class Meta:
         model = Transaction
         fields = '__all__'
         read_only_fields = ['transaction_id', 'payment_status', 'created_at', 'updated_at']
+
 
 
 class PurchaseCourseSerializer(serializers.Serializer):

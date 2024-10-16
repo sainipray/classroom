@@ -4,6 +4,9 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
+from apps.batch.models import Batch
+from apps.course.models import Course
+
 User = get_user_model()
 
 
@@ -49,3 +52,17 @@ class Transaction(TimeStampedModel):
 
     class Meta:
         ordering = ('-created',)
+
+    @property
+    def student_name(self):
+        return self.user.full_name if self.user else "Unknown"
+
+    @property
+    def content_name(self):
+        if self.content_type == self.ContentType.COURSE:
+            return Course.objects.filter(id=self.content_id).first().name if Course.objects.filter(
+                id=self.content_id).exists() else "Unknown Course"
+        elif self.content_type == self.ContentType.BATCH:
+            return Batch.objects.filter(id=self.content_id).first().name if Batch.objects.filter(
+                id=self.content_id).exists() else "Unknown Batch"
+        return "Unknown Content"
