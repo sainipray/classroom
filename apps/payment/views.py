@@ -16,7 +16,8 @@ from apps.batch.models import BatchPurchaseOrder, Batch, Enrollment
 from apps.course.models import Course, CoursePurchaseOrder
 from apps.payment.models import Transaction
 from apps.payment.serializers import VerifyPaymentSerializer, TransactionSerializer, PurchaseCourseSerializer, \
-    ApplyCouponSerializer, PurchaseBatchSerializer
+    ApplyCouponSerializer, PurchaseBatchSerializer, PurchaseTestSeriesSerializer
+from apps.test_series.models import TestSeries, TestSeriesPurchaseOrder
 from config.razor_payment import RazorpayService
 
 logger = logging.getLogger(__name__)
@@ -168,6 +169,89 @@ class PurchaseCourseView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
+class GetTestSeriesPricingView(APIView):
+    """
+    API view to get pricing details for a specific test series including GST and additional fees.
+    """
+
+    def get(self, request, test_series_id):
+        test_series = get_object_or_404(TestSeries, id=test_series_id,
+                                        is_published=True)  # Ensure to check if the test series is active
+
+        # Original price (assuming first installment is stored in a field called `first_installment_price`)
+        original_price = test_series.effective_price or 0
+
+        # Get final pricing details including GST and other fees
+        final_price_responses = final_price_with_other_expenses_and_gst(original_price)
+
+        # Construct the response data
+        response_data = {
+            "test_series_id": test_series.id,
+            "test_series_name": test_series.name,
+        }
+        response_data.update(final_price_responses)
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+class PurchaseTestSeriesView(APIView):
+    """
+    API view to initiate a test series purchase by creating a Razorpay order.
+    """
+
+    def post(self, request):
+        serializer = PurchaseTestSeriesSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+
+        test_series = serializer.validated_data['test_series']
+
+        # Check if the user has already purchased the test series
+        if TestSeriesPurchaseOrder.objects.filter(student=request.user, test_series=test_series).exists():
+            return Response({"error": "You have already purchased this test series."},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        original_price = test_series.effective_price or 0
+        discount_applied = 0
+        price_after_coupon = None
+
+        final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price))
+
+        try:
+            razorpay_service = RazorpayService()
+            transaction = razorpay_service.initiate_transaction(
+                content_type=Transaction.ContentType.TEST_SERIES,
+                content_id=test_series.id,
+                user=request.user,
+                discount_applied=discount_applied,
+                coupon=None,
+                price_after_coupon=price_after_coupon,
+                total_amount=final_price_responses['total_amount'],
+                original_price=final_price_responses['original_price'],
+                gst_percentage=final_price_responses['gst_percentage'],
+                platform_fees=final_price_responses['platform_fees'],
+                internet_charges=final_price_responses['internet_charges'],
+            )
+        except Exception as e:
+            return Response({"error": "Failed to initiate transaction. Please try again later."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        response_data = {
+            "order_id": transaction.transaction_id,
+            "amount": float(transaction.amount),
+            "currency": "INR",
+            "name": getattr(settings, 'WEB_SITE_NAME', 'Your Website Name'),  # Define in settings.py
+            "description": f"Payment for Test Series: {test_series.name}",
+            "image": "",  # Define in settings.py
+            "prefill": {
+                "name": request.user.full_name,
+                "email": request.user.email,
+                "contact": request.user.phone_number.as_e164  # Ensure `phone_number` is properly handled
+            }
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
 class VerifyPaymentView(APIView):
     """
     API view to verify Razorpay payments and create purchase orders upon successful payment.
@@ -269,8 +353,20 @@ class VerifyPaymentView(APIView):
                                 status=status.HTTP_200_OK)
 
             elif content_type == Transaction.ContentType.TEST_SERIES:
-                # Implement test series purchase logic
-                pass
+                test_series = get_object_or_404(TestSeries, id=content_id, is_published=True)
+
+                # Create TestSeriesPurchaseOrder
+                TestSeriesPurchaseOrder.objects.create(
+                    student=request.user,
+                    test_series=test_series,
+                    transaction=verified_transaction
+                )
+                logger.info(
+                    f"TestSeriesPurchaseOrder created for transaction {razorpay_order_id} and user {request.user.id}")
+
+                return Response({"status": "Payment verified and test series purchase order created."},
+                                status=status.HTTP_200_OK)
+
             else:
                 logger.error(f"Invalid content type '{content_type}' for transaction {razorpay_order_id}")
                 return Response({"error": "Invalid content type."}, status=status.HTTP_400_BAD_REQUEST)

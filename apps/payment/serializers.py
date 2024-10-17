@@ -6,6 +6,7 @@ from .models import Transaction
 from ..batch.models import Batch, BatchPurchaseOrder
 from ..coupon.models import Coupon
 from ..course.models import Course
+from ..test_series.models import TestSeries
 
 
 class VerifyPaymentSerializer(serializers.Serializer):
@@ -22,7 +23,6 @@ class TransactionSerializer(serializers.ModelSerializer):
         model = Transaction
         fields = '__all__'
         read_only_fields = ['transaction_id', 'payment_status', 'created_at', 'updated_at']
-
 
 
 class PurchaseCourseSerializer(serializers.Serializer):
@@ -147,15 +147,28 @@ class PurchaseBatchSerializer(serializers.Serializer):
 
             # Check if the installment has already been purchased
             if BatchPurchaseOrder.objects.filter(
-                student=self.context['request'].user,
-                batch=batch,
-                installment_number=installment_number
+                    student=self.context['request'].user,
+                    batch=batch,
+                    installment_number=installment_number
             ).exists():
                 raise serializers.ValidationError(f"Installment {installment_number} has already been purchased.")
 
         attrs['batch'] = batch
         attrs['fee_structure'] = fee_structure
         return attrs
+
+
+class PurchaseTestSeriesSerializer(serializers.Serializer):
+    test_series_id = serializers.IntegerField()
+
+    def validate(self, attrs):
+        test_series_id = attrs.get('test_series_id')
+
+        # Fetch the test series and ensure it is published
+        test_series = get_object_or_404(TestSeries, id=test_series_id, is_published=True)
+        attrs['test_series'] = test_series
+        return attrs
+
 
 class PayInstallmentSerializer(serializers.Serializer):
     purchase_order_id = serializers.IntegerField()

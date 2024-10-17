@@ -5,7 +5,7 @@ from rest_framework.response import Response
 
 from abstract.views import CustomResponseMixin
 from .models import TestSeries, TestSeriesCategory
-from .serializers import TestSeriesSerializer, TestSeriesCategorySerializer
+from .serializers import TestSeriesSerializer, TestSeriesCategorySerializer, RetrieveTestSeriesSerializer
 
 
 class TestSeriesCategoryViewSet(CustomResponseMixin):
@@ -18,6 +18,8 @@ class TestSeriesCategoryViewSet(CustomResponseMixin):
 class TestSeriesViewSet(CustomResponseMixin):
     queryset = TestSeries.objects.all()
     serializer_class = TestSeriesSerializer
+    retrieve_serializer_class = RetrieveTestSeriesSerializer
+    list_serializer_class = RetrieveTestSeriesSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('name',)
 
