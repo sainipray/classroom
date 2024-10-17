@@ -46,6 +46,7 @@ urlpatterns = [
     path("api/utils/", include("apps.utils.urls")),
     path("api/payment/", include("apps.payment.urls")),
     path("api/widget/", include("apps.widget.urls")),
+    path("api/test-series/", include("apps.test_series.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += [

@@ -54,7 +54,7 @@ PROJECT_APPS = [
     "apps.lead.apps.LeadConfig",
     "apps.coupon.apps.CouponConfig",
     "apps.payment.apps.PaymentConfig",
-    # "apps.course.apps.CourseConfig",
+    "apps.test_series.apps.TestSeriesConfig",
     # "apps.filemanager.apps.FilemanagerConfig",
 ]
 

@@ -132,26 +132,7 @@ class UserCreateListView(generics.ListCreateAPIView):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
-    # def list(self, request, *args, **kwargs):
-    #     queryset = self.filter_queryset(self.get_queryset())
-    #
-    #     page = self.paginate_queryset(queryset)
-    #     serializer = self.get_serializer(page, many=True)
-    #     total_users = queryset.count()
-    #     active_users = queryset.filter(is_active=True).count()
-    #     new_enrollments_last_week = queryset.filter(
-    #         date_joined__gte=timezone.now() - timedelta(days=7)
-    #     ).count()
-    #     inactive_users = queryset.filter(is_active=False).count()
-    #     response_data = self.get_paginated_response(serializer.data)
-    #
-    #     response_data.data.update({
-    #         "total_users": total_users,
-    #         "active_users": active_users,
-    #         "new_enrollments_last_week": new_enrollments_last_week,
-    #         "inactive_users": inactive_users,
-    #     })
-    #     return response_data
+
 
 
 class StudentViewSet(viewsets.ModelViewSet):

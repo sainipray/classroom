@@ -4,7 +4,7 @@ from .models import Batch
 from .serializers.fee_serializers import FeeStructureSerializer
 
 
-class BatchSerializer(serializers.ModelSerializer):
+class StudentBatchSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source='created_by.full_name')
     fee_structure = FeeStructureSerializer(read_only=True)
     subject = serializers.ReadOnlyField(source='subject.name')
@@ -23,7 +23,7 @@ class BatchSerializer(serializers.ModelSerializer):
         return []
 
 
-class RetrieveBatchSerializer(BatchSerializer):
+class StudentRetrieveBatchSerializer(StudentBatchSerializer):
     content = serializers.ReadOnlyField()
 
     class Meta:

@@ -1,12 +1,12 @@
 from rest_framework import viewsets
 from abstract.views import ReadOnlyCustomResponseMixin
 from .models import Batch, Enrollment, BatchPurchaseOrder  # Assuming you have an Enrollment model for student batch enrollments
-from .student_serializers import BatchSerializer, RetrieveBatchSerializer  # Create these serializers
+from .student_serializers import StudentBatchSerializer, StudentRetrieveBatchSerializer# Create these serializers
 
 
 class AvailableBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelViewSet):
-    serializer_class = BatchSerializer
-    retrieve_serializer_class = RetrieveBatchSerializer
+    serializer_class = StudentBatchSerializer
+    retrieve_serializer_class = StudentRetrieveBatchSerializer
 
     def get_queryset(self):
         # Retrieve all Enrollment records for the authenticated user
@@ -28,8 +28,8 @@ class AvailableBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelV
 
 
 class PurchasedBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelViewSet):
-    serializer_class = BatchSerializer
-    retrieve_serializer_class = RetrieveBatchSerializer
+    serializer_class = StudentBatchSerializer
+    retrieve_serializer_class = StudentRetrieveBatchSerializer
 
     def get_queryset(self):
         # Retrieve batch IDs for enrolled batches for the authenticated user
