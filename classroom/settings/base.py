@@ -55,7 +55,7 @@ PROJECT_APPS = [
     "apps.coupon.apps.CouponConfig",
     "apps.payment.apps.PaymentConfig",
     "apps.test_series.apps.TestSeriesConfig",
-    # "apps.filemanager.apps.FilemanagerConfig",
+    "apps.free_resource.apps.FreeResourceConfig",
 ]
 
 INSTALLED_APPS += PROJECT_APPS

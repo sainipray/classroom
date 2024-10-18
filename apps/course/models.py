@@ -71,7 +71,7 @@ class Course(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         if self.price and self.discount:
-            self.effective_price = self.price - (self.price * (self.discount / 100))
+            self.effective_price = self.discount
         else:
             self.effective_price = self.price
         super().save(*args, **kwargs)

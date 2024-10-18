@@ -26,7 +26,7 @@ class TestSeries(TimeStampedModel):
     description = models.TextField(blank=True, null=True)
     thumbnail = models.CharField(max_length=255, null=True, blank=True)
     is_digital = models.BooleanField(default=True)
-    url = models.CharField(max_length=255)
+    url = models.CharField(max_length=255, null=True, blank=True)
     highlights = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     is_published = models.BooleanField(default=False, verbose_name="Is Published")
     created_by = models.ForeignKey(User, verbose_name="Created By", on_delete=models.CASCADE, null=True, blank=True)
@@ -36,7 +36,7 @@ class TestSeries(TimeStampedModel):
 
     def save(self, *args, **kwargs):
         if self.price and self.discount:
-            self.effective_price = self.price - (self.price * (self.discount / 100))
+            self.effective_price = self.discount
         else:
             self.effective_price = self.price
         super().save(**kwargs)
