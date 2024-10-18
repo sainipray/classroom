@@ -4,6 +4,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from .student_views import StudentProfileViewSet
 from .views import (
     LoginAPIView,
     PhoneOTPVerifyAPIView,
@@ -13,6 +14,11 @@ from .views import (
 
 router = DefaultRouter()
 router.register(r'students', StudentViewSet)
+
+
+student_router = DefaultRouter()
+student_router.register(r'my-profile', StudentProfileViewSet)
+
 urlpatterns = [
     path('token-refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path("signup/", RegisterAPIView.as_view(), name="signup"),
@@ -26,4 +32,5 @@ urlpatterns = [
 
 urlpatterns += [
     path('', include(router.urls)),
+    path('', include(student_router.urls)),
 ]

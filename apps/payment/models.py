@@ -6,6 +6,7 @@ from django_extensions.db.models import TimeStampedModel
 
 from apps.batch.models import Batch
 from apps.course.models import Course
+from apps.test_series.models import TestSeries
 
 User = get_user_model()
 
@@ -64,5 +65,8 @@ class Transaction(TimeStampedModel):
                 id=self.content_id).exists() else "Unknown Course"
         elif self.content_type == self.ContentType.BATCH:
             return Batch.objects.filter(id=self.content_id).first().name if Batch.objects.filter(
+                id=self.content_id).exists() else "Unknown Batch"
+        elif self.content_type == self.ContentType.TEST_SERIES:
+            return TestSeries.objects.filter(id=self.content_id).first().name if Batch.objects.filter(
                 id=self.content_id).exists() else "Unknown Batch"
         return "Unknown Content"
