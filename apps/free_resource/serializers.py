@@ -9,7 +9,7 @@ from apps.free_resource.models import FreeResource
 class VideoFreeResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = FreeResource
-        fields = ('video_file', 'title', 'thumbnail')
+        fields = ('video_file', 'title', 'thumbnail', 'link', 'id')
 
     def validate_video_file(self, value):
         if value:
@@ -23,10 +23,11 @@ class VideoFreeResourceSerializer(serializers.ModelSerializer):
         validated_data['resource_type'] = FreeResource.ResourceType.VIDEO
         return FreeResource.objects.create(**validated_data)
 
+
 class DocumentFreeResourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = FreeResource
-        fields = ('document_file', 'title', 'thumbnail')
+        fields = ('document_file', 'title', 'thumbnail', 'link', 'id')
 
     def validate_document_file(self, value):
         if value:

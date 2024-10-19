@@ -12,6 +12,7 @@ class FreeResource(TimeStampedModel):
         max_length=20,
         choices=ResourceType.choices
     )
+    link = models.URLField(null=True, blank=True)
     thumbnail = models.CharField(max_length=255, blank=True, null=True)
     video_file = models.CharField(max_length=255, null=True, blank=True)
     document_file = models.CharField(max_length=255, null=True, blank=True)
