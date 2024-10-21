@@ -1,13 +1,11 @@
 import logging
 from decimal import Decimal
 
-import razorpay
 from django.conf import settings
 from django.db import transaction as db_transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -416,78 +414,6 @@ class ApplyCouponView(APIView):
             return Response(response_data, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-class RazorpayWebhookView(APIView):
-    """
-    Endpoint to handle Razorpay webhook events.
-    """
-    permission_classes = [AllowAny]  # Razorpay needs to access this endpoint
-
-    def post(self, request):
-        payload = request.body
-        signature = request.headers.get('X-Razorpay-Signature')
-
-        webhook_secret = settings.RAZORPAY_WEBHOOK_SECRET  # Define in settings.py
-
-        try:
-            # Verify webhook signature
-            razorpay_client = RazorpayService()
-            razorpay_client.utility.verify_webhook_signature(payload, signature, webhook_secret)
-            event = razorpay_client.utility.parse_webhook_event(payload)
-        except razorpay.errors.SignatureVerificationError:
-            logger.warning("Invalid Razorpay webhook signature.")
-            return Response({"error": "Invalid signature."}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            logger.error(f"Error parsing Razorpay webhook: {str(e)}")
-            return Response({"error": "Invalid payload."}, status=status.HTTP_400_BAD_REQUEST)
-
-        event_type = event.get('event')
-        data = event.get('payload', {}).get('payment', {}).get('entity', {})
-
-        if event_type == 'payment.captured':
-            razorpay_order_id = data.get('order_id')
-            razorpay_payment_id = data.get('id')
-            # Assuming signature verification has already been done
-
-            try:
-                razorpay_service = RazorpayService()
-                verified_transaction = razorpay_service.verify_payment(
-                    razorpay_order_id=razorpay_order_id,
-                    razorpay_payment_id=razorpay_payment_id,
-                    razorpay_signature=signature  # Adjust as needed
-                )
-            except ValueError as e:
-                logger.error(f"Webhook payment verification failed: {str(e)}")
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-            if verified_transaction.payment_status == 'completed':
-                if verified_transaction.content_type == 'course':
-                    # Existing course verification logic
-                    pass  # Existing code
-                elif verified_transaction.content_type == 'batch_installment':
-                    # Handle batch installment verification
-                    try:
-                        purchase_order = BatchPurchaseOrder.objects.get(transaction=verified_transaction)
-                    except BatchPurchaseOrder.DoesNotExist:
-                        logger.error(f"No BatchPurchaseOrder found for transaction {razorpay_order_id}")
-                        return Response({"error": "Invalid transaction."}, status=status.HTTP_400_BAD_REQUEST)
-
-                    if not purchase_order.is_paid:
-                        purchase_order.is_paid = True
-                        purchase_order.payment_date = timezone.now()
-                        purchase_order.save()
-                        logger.info(
-                            f"Installment {purchase_order.installment_number} for batch {purchase_order.batch.id} marked as paid via webhook.")
-                else:
-                    logger.error(
-                        f"Invalid content type '{verified_transaction.content_type}' for transaction {razorpay_order_id}")
-                    return Response({"error": "Invalid content type."}, status=status.HTTP_400_BAD_REQUEST)
-
-                return Response({"status": "success"}, status=status.HTTP_200_OK)
-
-        # Handle other event types if necessary
-        return Response({"status": "ignored"}, status=status.HTTP_200_OK)
 
 
 class PurchaseBatchView(APIView):

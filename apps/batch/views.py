@@ -1,13 +1,11 @@
-from datetime import datetime, timedelta
-
-import pytz
-from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 
 from abstract.views import CustomResponseMixin
 from config.live_video import MeritHubAPI
@@ -18,9 +16,12 @@ from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSeriali
 from .serializers.enrollment_serializers import EnrollmentSerializer, BatchStudentUserSerializer, \
     ListEnrollmentSerializer
 from .serializers.fee_serializers import FeeStructureSerializer
-from .serializers.liveclass_serializers import LiveClassSerializer, RetrieveLiveClassSerializer
+from .serializers.liveclass_serializers import LiveClassSerializer, RetrieveLiveClassSerializer, \
+    CreateLiveClassSerializer
 from .serializers.studymaterial_serializer import StudyMaterialSerializer
 from ..utils.functions import merge_and_sort_items
+
+User = get_user_model()
 
 
 class SubjectViewSet(CustomResponseMixin):
@@ -146,7 +147,6 @@ class BatchViewSet(CustomResponseMixin):
                         status=status.HTTP_200_OK)
 
 
-
 class EnrollmentViewSet(CustomResponseMixin):
     serializer_class = EnrollmentSerializer
     queryset = Enrollment.objects.all()
@@ -194,7 +194,8 @@ class EnrollmentViewSet(CustomResponseMixin):
             return Response({"error": "Enrollment not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
-class LiveClassViewSet(viewsets.ModelViewSet):
+class LiveClassViewSet(mixins.DestroyModelMixin,
+                       GenericViewSet):
     queryset = LiveClass.objects.all()
     serializer_class = LiveClassSerializer
 
@@ -212,40 +213,12 @@ class StudyMaterialViewSet(viewsets.ModelViewSet):
 class CreateLiveClassView(APIView):
 
     def post(self, request):
-        batch_id = request.data.get("batch_id")
-        title = request.data.get("title")
+        serializer = CreateLiveClassSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if not batch_id or not title:
-            return Response({"error": "Batch ID and title are required."}, status=status.HTTP_400_BAD_REQUEST)
-            # Get current time and set end time to one hour later
-        # Get the current time in UTC
-        now_utc = datetime.utcnow().replace(tzinfo=pytz.utc)
-
-        # Set start time and end time
-        start_time = now_utc.isoformat()  # Current time in UTC
-        end_time = (now_utc + timedelta(hours=1)).isoformat()  # One hour later in UTC
-
-        # Set other fields to default values
-        duration = 60  # Default duration
-        lang = "en"  # Default language
-        time_zone_id = "Asia/Kolkata"  # Default time zone
-        description = "This is a scheduled class."  # Default description
-        access = "private"  # Default access
-        recording = {
-            "record": True,
-            "autoRecord": False,
-            "recordingControl": True
-        }
-        participant_control = {
-            "write": False,
-            "audio": False,
-            "video": False
-        }
-        schedule = []  # Set your default schedule if necessary
-        total_classes = 1  # Default total classes
-
-        # Get the batch object
-        batch = get_object_or_404(Batch, id=batch_id)
+        # Extract validated data
+        validated_data = serializer.validated_data
+        batch = validated_data['batch']
 
         # Assuming you have configured your client ID and secret key in settings
         client_id = "cqb8fh1nuvta0dldbsdg"
@@ -254,28 +227,67 @@ class CreateLiveClassView(APIView):
 
         # Prepare the class data
         class_data = {
-            "title": title,
-            "startTime": start_time,
-            "endDate": end_time,
-            "duration": duration,
-            "lang": lang,
-            "timeZoneId": time_zone_id,
-            "description": description,
-            "type": "oneTime",  # or "perma" based on your logic
-            "access": access,
-            "login": False,  # Change if necessary
-            "layout": "CR",  # Change as needed
-            "status": "up",  # Change if necessary
-            "recording": recording,
-            "participantControl": participant_control,
-            "schedule": schedule,
-            "totalClasses": total_classes,
+            'title': validated_data['title'],
+            'startTime': validated_data['startTime'],
+            'endDate': validated_data['endDate'],
+            'duration': validated_data['duration'],
+            'lang': validated_data['lang'],
+            'timeZoneId': validated_data['timeZoneId'],
+            'description': validated_data['description'],
+            'type': validated_data['type'],
+            'access': validated_data['access'],
+            'login': validated_data['login'],
+            'layout': validated_data['layout'],
+            'status': validated_data['status'],
+            'recording': validated_data['recording'],
+            'participantControl': validated_data['participantControl']
         }
+        try:
+            live_class = api.schedule_class(
+                user_id=self.request.user.id,
+                class_data=class_data,
+                batch=batch
+            )
+            enrolled_students = Enrollment.objects.filter(batch=batch, is_approved=True)
+            students = []
+            for student in enrolled_students:
+                user = student.student
+                if not user.merit_user_id:
+                    response = api.create_user({
+                        'name': user.full_name,
+                        'email': user.email,
+                        'clientUserId': str(user.id),
+                        "role": "M",
+                        "timeZone": "Asia/Kolkata",
+                        "permission": "CJ"
+                    })
+                    user.merit_user_id = response['userId']
+                    user.save()
+                common_participant_link = live_class.common_participant_link
+                user_link = ""
+                if common_participant_link:
+                    user_link = common_participant_link.split('/')[-1]
+                students.append({
+                    "userId": user.merit_user_id,
+                    "userLink": user_link,
+                    "userType": "su"
+                })
+            # Now add users in live class
+            response = api.add_students_to_class(class_id=live_class.class_id, users=students)
+            for student in response:
+                try:
+                    user = User.objects.get(merit_user_id=student['userId'])
+                    live_class_link = api.generate_url(student['userLink'])
+                    Attendance.objects.create(student=user, live_class=live_class, live_class_link=live_class_link)
+                except User.DoesNotExist:
+                    print(f"User {student['userId']}")
 
-        # Schedule the class (assumes you have a user_id for the teacher)
-        live_class = api.schedule_class(user_id=self.request.user.id, class_data=class_data, batch=batch)
-        serializer = RetrieveLiveClassSerializer(instance=live_class)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # Serialize the created class (assuming you have a serializer for this)
+        retrieve_serializer = RetrieveLiveClassSerializer(instance=live_class)
+        return Response(retrieve_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class FeeStructureViewSet(CustomResponseMixin):

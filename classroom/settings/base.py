@@ -14,7 +14,7 @@ from datetime import timedelta
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
@@ -278,3 +278,4 @@ SWAGGER_SETTINGS = {
     },
     # 'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.openapi.AutoSchema',
 }
+WEBHOOK_LOG_FOLDER = Path.joinpath(BASE_DIR, 'webhook_log')

@@ -33,8 +33,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Additional development-specific settings can be added below
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR.parent.joinpath('assets')  # Replace with your actual static root
+STATIC_ROOT = BASE_DIR.joinpath('assets')  # Replace with your actual static root
 
 # Media files
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR.parent.joinpath('media')
+MEDIA_ROOT = BASE_DIR.joinpath('media')

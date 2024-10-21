@@ -2,6 +2,7 @@ from rest_framework import serializers
 
 from apps.batch.models import Batch, Subject, Folder, File
 from apps.batch.serializers.fee_serializers import FeeStructureSerializer
+from apps.batch.serializers.liveclass_serializers import LiveClassSerializer
 from apps.user.serializers import CustomUserSerializer
 
 
@@ -34,6 +35,8 @@ class RetrieveBatchSerializer(serializers.ModelSerializer):
     enrolled_students = serializers.ReadOnlyField()
     student_join_request = serializers.ReadOnlyField()
     fee_structure = FeeStructureSerializer(read_only=True)
+    # TODO filter live class of past one day later
+    live_classes = LiveClassSerializer(read_only=True, many=True)
 
     class Meta:
         model = Batch

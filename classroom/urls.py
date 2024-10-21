@@ -48,6 +48,7 @@ urlpatterns = [
     path("api/widget/", include("apps.widget.urls")),
     path("api/test-series/", include("apps.test_series.urls")),
     path("api/free-resource/", include("apps.free_resource.urls")),
+    path("api/webhook/", include("apps.webhook.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += [

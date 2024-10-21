@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from apps.payment.views import PurchaseCourseView, VerifyPaymentView, TransactionViewSet, RazorpayWebhookView, \
+from apps.payment.views import PurchaseCourseView, VerifyPaymentView, TransactionViewSet, \
     ApplyCouponView, GetCoursePricingView, PurchaseBatchView, GetBatchPricingView, PurchaseTestSeriesView, \
     GetTestSeriesPricingView
 
@@ -18,7 +18,6 @@ urlpatterns = [
     path('test-series-pricing/<int:test_series_id>/', GetTestSeriesPricingView.as_view(),
          name='get_test_series_pricing'),
     path('purchase-test-series/', PurchaseTestSeriesView.as_view(), name='purchase_test_series'),
-    path('webhook/', RazorpayWebhookView.as_view(), name='razorpay_webhook'),
 
     path('', include(router.urls)),
 

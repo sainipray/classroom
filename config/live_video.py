@@ -70,6 +70,9 @@ class MeritHubAPI:
             "Content-Type": "application/json"
         }
 
+    def generate_url(self, link):
+        return f"https://live.merithub.com/info/room/{self.client_id}/{link}"
+
     # Users
     def create_user(self, user_data):
         """Add a user to the account."""
@@ -102,10 +105,12 @@ class MeritHubAPI:
         live_class = LiveClass.objects.create(
             batch=batch,
             title=class_data['title'],
-            host_link="https://live.merithub.com/info/room/{}/{}".format(self.client_id, data['hostLink']),
-            common_host_link="https://live.merithub.com/info/room/{}/{}".format(self.client_id, data['commonLinks']['commonHostLink']),
-            common_moderator_link="https://live.merithub.com/info/room/{}/{}".format(self.client_id, data['commonLinks']['commonModeratorLink']),
-            common_participant_link="https://live.merithub.com/info/room/{}/{}".format(self.client_id, data['commonLinks']['commonParticipantLink']),
+            class_id=data['classId'],
+            date=class_data['startTime'],
+            host_link=self.generate_url(data['hostLink']),
+            common_host_link=self.generate_url(data['commonLinks']['commonHostLink']),
+            common_moderator_link=self.generate_url(data['commonLinks']['commonModeratorLink']),
+            common_participant_link=self.generate_url(data['commonLinks']['commonParticipantLink'])
         )
         return live_class
 

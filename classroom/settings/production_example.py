@@ -29,11 +29,11 @@ DATABASES = {
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = "/static/"
-STATIC_ROOT = BASE_DIR.parent.joinpath('assets')  # Replace with your actual static root
+STATIC_ROOT = BASE_DIR.joinpath('assets')  # Replace with your actual static root
 
 # Media files
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR.parent.joinpath('media')  # Replace with your actual media root
+MEDIA_ROOT = BASE_DIR.joinpath('media')  # Replace with your actual media root
 
 # Security settings
 SECURE_BROWSER_XSS_FILTER = True
