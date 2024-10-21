@@ -6,9 +6,9 @@ import razorpay
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.status import HTTP_200_OK, HTTP_400_BAD_REQUEST
 from rest_framework.views import APIView
 
 from apps.batch.models import BatchPurchaseOrder, LiveClass, Attendance
@@ -71,7 +71,7 @@ class RazorpayWebhookView(APIView):
                         purchase_order = BatchPurchaseOrder.objects.get(transaction=verified_transaction)
                     except BatchPurchaseOrder.DoesNotExist:
                         logger.error(f"No BatchPurchaseOrder found for transaction {razorpay_order_id}")
-                        return Response({"error": "Invalid transaction."}, status=status.HTTP_400_BAD_REQUEST)
+                        return Response({"error": "Invalid transaction."}, status=HTTP_400_BAD_REQUEST)
 
                     if not purchase_order.is_paid:
                         purchase_order.is_paid = True
@@ -82,19 +82,16 @@ class RazorpayWebhookView(APIView):
                 else:
                     logger.error(
                         f"Invalid content type '{verified_transaction.content_type}' for transaction {razorpay_order_id}")
-                    return Response({"error": "Invalid content type."}, status=status.HTTP_400_BAD_REQUEST)
+                    return Response({"error": "Invalid content type."}, status=HTTP_400_BAD_REQUEST)
 
-                return Response({"status": "success"}, status=status.HTTP_200_OK)
+                return Response({"message": "success"}, status=HTTP_200_OK)
 
         # Handle other event types if necessary
-        return Response({"status": "ignored"}, status=status.HTTP_200_OK)
+        return Response({"message": "ignored"}, status=HTTP_200_OK)
 
 
 class MeritHubWebhookView(APIView):
     permission_classes = [AllowAny]
-
-
-class WebhookView(APIView):
 
     def post(self, request, *args, **kwargs):
         """
@@ -120,7 +117,7 @@ class WebhookView(APIView):
         elif request_type == "chats":
             return self.handle_chat_data(data)
         else:
-            return Response({"status": "Unknown request type"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"message": "Unknown request type"}, status=HTTP_400_BAD_REQUEST)
 
     def log_data_to_file(self, data, request_type):
         """
@@ -167,7 +164,7 @@ class WebhookView(APIView):
 
         # Save the class status to the database or perform other actions
         # For now, just return a success response
-        return Response({"status": "Class status processed"}, status=status.HTTP_200_OK)
+        return Response({"message": "Class status processed"}, status=HTTP_200_OK)
 
     def handle_attendance(self, data):
         """
@@ -182,14 +179,15 @@ class WebhookView(APIView):
                 try:
                     user = User.objects.get(merit_user_id=merit_user_id)
                     try:
-                        attendance = Attendance.objects.get(student=user, live_class=live_class)
-                        attendance.attended = True
-                        attendance.analytics = attendance.get('analytics')
-                        attendance.browser = attendance.get('browser')
-                        attendance.ip = attendance.get('ip')
-                        attendance.os = attendance.get('os')
-                        attendance.start_time = attendance.get('startTime')
-                        attendance.total_time = attendance.get('totalTime')
+                        attn = Attendance.objects.get(student=user, live_class=live_class)
+                        attn.attended = True
+                        attn.analytics = attendance.get('analytics')
+                        attn.browser = attendance.get('browser')
+                        attn.ip = attendance.get('ip')
+                        attn.os = attendance.get('os')
+                        attn.start_time = attendance.get('startTime')
+                        attn.total_time = attendance.get('totalTime')
+                        attn.save()
                     except Attendance.DoesNotExist:
                         print(f"Attendance not found the user {merit_user_id}")
                 except User.DoesNotExist:
@@ -197,7 +195,7 @@ class WebhookView(APIView):
         except LiveClass.DoesNotExist:
             print(f"Live class ID {class_id} not found")
         # Process and save attendance data to the database
-        return Response({"status": "Attendance data processed"}, status=status.HTTP_200_OK)
+        return Response({"message": "Attendance data processed"}, status=HTTP_200_OK)
 
     def handle_recording(self, data):
         """
@@ -216,7 +214,7 @@ class WebhookView(APIView):
         except LiveClass.DoesNotExist:
             print(f"Live class ID {class_id} not found")
         # Process and save recording data to the database
-        return Response({"status": "Recording processed"}, status=status.HTTP_200_OK)
+        return Response({"message": "Recording processed"}, status=HTTP_200_OK)
 
     def handle_class_files(self, data):
         """
@@ -225,7 +223,7 @@ class WebhookView(APIView):
         class_id = data.get("classId")
         files = data.get("Files", [])
         # Process and save the shared files data to the database
-        return Response({"status": "Class files processed"}, status=status.HTTP_200_OK)
+        return Response({"message": "Class files processed"}, status=HTTP_200_OK)
 
     def handle_chat_data(self, data):
         """
@@ -234,4 +232,4 @@ class WebhookView(APIView):
         class_id = data.get("classId")
         chats = data.get("chats", {})
         # Process and save chat data (both public and private)
-        return Response({"status": "Chat data processed"}, status=status.HTTP_200_OK)
+        return Response({"message": "Chat data processed"}, status=HTTP_200_OK)

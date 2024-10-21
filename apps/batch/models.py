@@ -249,17 +249,21 @@ class LiveClass(TimeStampedModel):
     def __str__(self):
         return f"Live Class for {self.batch} on {self.date}"
 
+    @property
+    def student_join_link(self):
+        return self.attendance.live_class_link
+
 
 class Attendance(TimeStampedModel):
     student = models.ForeignKey(User, related_name="attendances", on_delete=models.CASCADE)
-    live_class = models.ForeignKey(LiveClass, related_name="attendances", on_delete=models.CASCADE)
+    live_class = models.OneToOneField(LiveClass, related_name="attendance", on_delete=models.CASCADE)
     attended = models.BooleanField(default=False, verbose_name="Attended")
     analytics = models.JSONField(verbose_name="Analytics", null=True, blank=True)
     browser = models.JSONField(max_length=255, verbose_name="Browser", null=True, blank=True)
     ip = models.CharField(max_length=255, verbose_name="IP", null=True, blank=True)
     os = models.JSONField(max_length=255, verbose_name="OS", null=True, blank=True)
     start_time = models.DateTimeField(verbose_name="Start Time", null=True, blank=True)
-    total_time = models.DurationField(verbose_name="Total Time", null=True, blank=True)
+    total_time = models.IntegerField(verbose_name="Total Time", null=True, blank=True)
     live_class_link = models.URLField(verbose_name="Live class Joining Link ", null=True, blank=True)
 
     class Meta:
@@ -303,5 +307,3 @@ class BatchPurchaseOrder(TimeStampedModel):
 
     def __str__(self):
         return f"BatchPurchaseOrder {self.id} - {self.batch.name} - Installment {self.installment_number}"
-
-

@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .student_views import AvailableBatchViewSet, PurchasedBatchViewSet
+from .student_views import AvailableBatchViewSet, PurchasedBatchViewSet, LiveClassesViewSet
 from .views import (SubjectViewSet, BatchViewSet, EnrollmentViewSet, LiveClassViewSet, AttendanceViewSet,
                     StudyMaterialViewSet, CreateLiveClassView, FeeStructureViewSet, FeesRecordAPI)
 
@@ -23,5 +23,9 @@ urlpatterns = [
     path('', include(student_router.urls)),
     path('create-live-class/', CreateLiveClassView.as_view(), name='create_live_class'),
     path('fees-record/', FeesRecordAPI.as_view(), name='fees_record'),
+
+    # Student URL
+    path('student/<str:batch>/batches-live-classes/', LiveClassesViewSet.as_view({'get': 'list'}),
+         name='live_classes_batches'),
 
 ]

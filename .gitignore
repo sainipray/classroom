@@ -176,3 +176,4 @@ cython_debug/
 
 /classroom/settings/dev.py
 /classroom/settings/production.py
+/webhook_log

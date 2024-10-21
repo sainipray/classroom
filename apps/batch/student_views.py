@@ -1,7 +1,11 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, mixins
+from rest_framework.viewsets import GenericViewSet
+
 from abstract.views import ReadOnlyCustomResponseMixin
-from .models import Batch, Enrollment, BatchPurchaseOrder  # Assuming you have an Enrollment model for student batch enrollments
-from .student_serializers import StudentBatchSerializer, StudentRetrieveBatchSerializer# Create these serializers
+from .models import Batch, Enrollment, \
+    BatchPurchaseOrder, LiveClass  # Assuming you have an Enrollment model for student batch enrollments
+from .student_serializers import StudentBatchSerializer, StudentRetrieveBatchSerializer, \
+    StudentLiveClassSerializer  # Create these serializers
 
 
 class AvailableBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelViewSet):
@@ -13,7 +17,8 @@ class AvailableBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelV
         enrolled_batch_ids = Enrollment.objects.filter(student=self.request.user).values_list('batch_id', flat=True)
 
         # Retrieve BatchPurchaseOrder IDs associated with the authenticated user
-        purchased_batch_ids = BatchPurchaseOrder.objects.filter(transaction__user=self.request.user).values_list('batch_id', flat=True)
+        purchased_batch_ids = BatchPurchaseOrder.objects.filter(transaction__user=self.request.user).values_list(
+            'batch_id', flat=True)
 
         # Fetch batches that are published and exclude both enrolled and purchased batches
         available_batches = Batch.objects.filter(
@@ -36,7 +41,8 @@ class PurchasedBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelV
         enrolled_batches = Enrollment.objects.filter(student=self.request.user).values_list('batch_id', flat=True)
 
         # Retrieve batch IDs for purchased batches for the authenticated user
-        purchased_batches = BatchPurchaseOrder.objects.filter(transaction__user=self.request.user).values_list('batch_id', flat=True)
+        purchased_batches = BatchPurchaseOrder.objects.filter(transaction__user=self.request.user).values_list(
+            'batch_id', flat=True)
 
         # Combine both lists of batch IDs into a single set
         combined_batch_ids = set(enrolled_batches) | set(purchased_batches)  # Use set to avoid duplicates
@@ -45,3 +51,14 @@ class PurchasedBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelV
         return Batch.objects.filter(
             id__in=combined_batch_ids
         ).select_related('created_by').filter(is_published=True)  # Ensure the batches are published
+
+
+class LiveClassesViewSet(mixins.ListModelMixin,
+                         GenericViewSet):
+    serializer_class = StudentLiveClassSerializer
+    queryset = LiveClass.objects.all()
+
+    def get_queryset(self):
+        batch = Batch.objects.get(id=self.kwargs['batch'])
+        live_classes = batch.live_classes.all()
+        return live_classes
