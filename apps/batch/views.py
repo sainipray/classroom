@@ -1,15 +1,18 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
+from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from abstract.views import CustomResponseMixin
 from config.live_video import MeritHubAPI
-from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial, FeeStructure, Folder, File
+from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial, FeeStructure, Folder, File, \
+    BatchPurchaseOrder
 from .serializers.attendance_serializers import AttendanceSerializer
 from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSerializer, SubjectSerializer, \
     FolderSerializer, FileSerializer
@@ -293,3 +296,29 @@ class CreateLiveClassView(APIView):
 class FeeStructureViewSet(CustomResponseMixin):
     queryset = FeeStructure.objects.all()
     serializer_class = FeeStructureSerializer
+
+
+class FeesRecordAPI(ListAPIView):
+
+    def get(self, request, *args, **kwargs):
+        purchase_orders = BatchPurchaseOrder.objects.all()
+        # Prepare data for each student in the batch
+        students_fees = []
+        for order in purchase_orders:
+            batch = order.batch
+            paid_fees = BatchPurchaseOrder.objects.filter(batch=batch, student=order.student, is_paid=True).aggregate(
+                total_paid=Sum('amount'))['total_paid'] or 0
+            total_fees = batch.fee_structure.total_amount if batch.fee_structure else 0
+            outstanding_fees = total_fees - paid_fees
+            students_fees.append({
+                'student_name': order.student.full_name,
+                'student_email': order.student.email,
+                'total_fees': total_fees,
+                'paid_fees': paid_fees,
+                'outstanding_fees': outstanding_fees,
+                'batch_name': batch.name,
+            })
+
+        # Apply pagination to the data
+        page = self.paginate_queryset(students_fees)
+        return self.get_paginated_response(page)

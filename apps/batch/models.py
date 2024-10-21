@@ -303,3 +303,5 @@ class BatchPurchaseOrder(TimeStampedModel):
 
     def __str__(self):
         return f"BatchPurchaseOrder {self.id} - {self.batch.name} - Installment {self.installment_number}"
+
+
