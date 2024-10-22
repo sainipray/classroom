@@ -4,7 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
-from rest_framework.generics import ListAPIView
+from rest_framework.generics import ListAPIView, get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
@@ -60,32 +60,6 @@ class BatchViewSet(CustomResponseMixin):
             )
         except Batch.DoesNotExist:
             return Response({'error': 'Batch not found.'}, status=status.HTTP_404_NOT_FOUND)
-
-    @action(detail=True, methods=['post'], url_path='create-folder')
-    def create_folder(self, request, pk=None):
-        batch = self.get_object()
-        request.data['batch'] = batch.id  # Set the batch ID
-        serializer = FolderSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=['post'], url_path='folders/(?P<folder_id>[^/.]+)/create-file')
-    def create_file(self, request, pk, folder_id=None):
-        # If no folder_id is provided, default to the root (Home) folder
-        if folder_id is None:
-            # Get or create the Home folder
-            home_folder, created = Folder.objects.get_or_create(title='Home', batch=self.get_object())
-            folder = home_folder
-        else:
-            folder = Folder.objects.get(id=folder_id)  # Fetch the folder
-
-        request.data['folder'] = folder.id  # Set the folder ID
-        serializer = FileSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def build_breadcrumb(self, folder):
         breadcrumb = []
@@ -322,3 +296,80 @@ class FeesRecordAPI(ListAPIView):
         # Apply pagination to the data
         page = self.paginate_queryset(students_fees)
         return self.get_paginated_response(page)
+
+
+class FolderFileViewSet(viewsets.ViewSet):
+    """
+    A ViewSet to handle operations related to Folders and Files within a Batch.
+    """
+    queryset = Batch.objects.all()
+
+    # Helper method to get the batch
+    def get_batch(self, pk):
+        return get_object_or_404(Batch, pk=pk)
+
+    # 1. Create a new folder within the batch
+    @action(detail=True, methods=['post'], url_path='create-folder')
+    def create_folder(self, request, pk=None):
+        batch = self.get_batch(pk)  # Get the batch using pk (batch_id)
+        request.data['batch'] = batch.id  # Set the batch ID in the request data
+        serializer = FolderSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # 2. Create a new file within a folder in the batch
+    @action(detail=True, methods=['post'], url_path='folders/(?P<folder_id>[^/.]+)/create-file')
+    def create_file(self, request, pk=None, folder_id=None):
+        batch = self.get_batch(pk)  # Get the batch
+        # If no folder_id is provided, use or create the Home folder
+        if folder_id is None:
+            folder, created = Folder.objects.get_or_create(title='Home', batch=batch)
+        else:
+            folder = get_object_or_404(Folder, id=folder_id)
+
+        request.data['folder'] = folder.id  # Set folder ID in request data
+        serializer = FileSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # 3. Rename a folder
+    @action(detail=True, methods=['patch'], url_path='folders/(?P<folder_id>[^/.]+)/rename-folder')
+    def rename_folder(self, request, pk=None, folder_id=None):
+        folder = get_object_or_404(Folder, id=folder_id)
+        folder.title = request.data.get('title', folder.title)  # Update folder title
+        folder.save()
+        return Response({'status': 'Folder renamed', 'title': folder.title}, status=status.HTTP_200_OK)
+
+    # 4. Rename a file
+    @action(detail=True, methods=['patch'], url_path='files/(?P<file_id>[^/.]+)/rename-file')
+    def rename_file(self, request, pk=None, file_id=None):
+        file = get_object_or_404(File, id=file_id)
+        file.title = request.data.get('title', file.title)  # Update file title
+        file.save()
+        return Response({'status': 'File renamed', 'title': file.title}, status=status.HTTP_200_OK)
+
+    # 5. Delete a folder
+    @action(detail=True, methods=['delete'], url_path='folders/(?P<folder_id>[^/.]+)/delete-folder')
+    def delete_folder(self, request, pk=None, folder_id=None):
+        folder = get_object_or_404(Folder, id=folder_id)
+        folder.delete()  # Delete the folder
+        return Response({'status': 'Folder deleted'}, status=status.HTTP_204_NO_CONTENT)
+
+    # 6. Delete a file
+    @action(detail=True, methods=['delete'], url_path='files/(?P<file_id>[^/.]+)/delete-file')
+    def delete_file(self, request, pk=None, file_id=None):
+        file = get_object_or_404(File, id=file_id)
+        file.delete()  # Delete the file
+        return Response({'status': 'File deleted'}, status=status.HTTP_204_NO_CONTENT)
+
+    # 7. Toggle lock status of a file (lock/unlock)
+    @action(detail=True, methods=['patch'], url_path='files/(?P<file_id>[^/.]+)/toggle-lock-file')
+    def toggle_lock_file(self, request, pk=None, file_id=None):
+        file = get_object_or_404(File, id=file_id)
+        file.is_locked = not file.is_locked  # Toggle the lock status
+        file.save()
+        return Response({'status': 'Lock status toggled', 'is_locked': file.is_locked}, status=status.HTTP_200_OK)

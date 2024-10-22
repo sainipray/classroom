@@ -244,7 +244,7 @@ class LiveClass(TimeStampedModel):
     class Meta:
         verbose_name = "Live Class"
         verbose_name_plural = "Live Classes"
-        ordering = ('-created',)
+        ordering = ('-date',)
 
     def __str__(self):
         return f"Live Class for {self.batch} on {self.date}"

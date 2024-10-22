@@ -34,3 +34,5 @@ class ReadOnlyCustomResponseMixin(viewsets.ReadOnlyModelViewSet):
         if self.action in ['retrieve', ] and self.retrieve_serializer_class:
             return self.retrieve_serializer_class
         return self.serializer_class
+
+

@@ -18,6 +18,7 @@ def merge_and_sort_items(folders, files):
             'title': file['title'],  # Assuming 'document' is the title
             'type': 'file',
             'url': file['url'],
+            'is_locked': file['is_locked'],
             'folder_id': file['folder'],  # Link to folder ID
             'created': file['created']
         })

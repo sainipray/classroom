@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Batch, LiveClass
+from .models import Batch, LiveClass, Attendance
 from .serializers.fee_serializers import FeeStructureSerializer
 
 
@@ -39,4 +39,11 @@ class StudentRetrieveBatchSerializer(StudentBatchSerializer):
 
     class Meta:
         model = Batch
+        fields = '__all__'
+
+
+class StudentAttendanceSerializer(serializers.ModelSerializer):
+    live_class = serializers.ReadOnlyField(source='live_class.title')
+    class Meta:
+        model = Attendance
         fields = '__all__'

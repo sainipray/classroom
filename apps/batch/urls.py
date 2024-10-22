@@ -1,9 +1,10 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .student_views import AvailableBatchViewSet, PurchasedBatchViewSet, LiveClassesViewSet
+from .student_views import AvailableBatchViewSet, PurchasedBatchViewSet, StudentLiveClassesViewSet, \
+    StudentBatchAttendanceViewSet
 from .views import (SubjectViewSet, BatchViewSet, EnrollmentViewSet, LiveClassViewSet, AttendanceViewSet,
-                    StudyMaterialViewSet, CreateLiveClassView, FeeStructureViewSet, FeesRecordAPI)
+                    StudyMaterialViewSet, CreateLiveClassView, FeeStructureViewSet, FeesRecordAPI, FolderFileViewSet)
 
 router = DefaultRouter()
 router.register(r'subjects', SubjectViewSet)
@@ -13,6 +14,7 @@ router.register(r'attendances', AttendanceViewSet)
 router.register(r'study-materials', StudyMaterialViewSet)
 router.register(r'enrollments', EnrollmentViewSet)
 router.register(r'fee-structures', FeeStructureViewSet)
+router.register(r'content', FolderFileViewSet, basename='batch-content')
 
 student_router = DefaultRouter()
 student_router.register(r'student/available-batches', AvailableBatchViewSet, basename='available-batches')
@@ -25,7 +27,9 @@ urlpatterns = [
     path('fees-record/', FeesRecordAPI.as_view(), name='fees_record'),
 
     # Student URL
-    path('student/<str:batch>/batches-live-classes/', LiveClassesViewSet.as_view({'get': 'list'}),
+    path('student/<str:batch>/batches-live-classes/', StudentLiveClassesViewSet.as_view({'get': 'list'}),
          name='live_classes_batches'),
+    path('student/<str:batch>/batches-attendance/', StudentBatchAttendanceViewSet.as_view({'get': 'list'}),
+         name='student_batch_attendance'),
 
 ]

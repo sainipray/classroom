@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
+from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.utils import timezone
 from django_extensions.db.models import TimeStampedModel
-
 
 User = get_user_model()
 
@@ -20,8 +20,7 @@ class Coupon(TimeStampedModel):
 
     name = models.CharField(max_length=255, verbose_name="Offer Name")
     code = models.CharField(max_length=50, unique=True, verbose_name="Coupon Code")
-    coupon_type = models.CharField(max_length=10, choices=COUPON_TYPE_CHOICES, default='public',
-                                   verbose_name="Coupon Type")
+
     discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPE_CHOICES, verbose_name="Discount Type")
     discount_value = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Discount Value")
     max_discount_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True,
@@ -37,10 +36,18 @@ class Coupon(TimeStampedModel):
     status = models.BooleanField(default=True, verbose_name="Status")
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_coupons",
                                    verbose_name="Created By")
-    courses = models.ManyToManyField('course.Course', blank=True, related_name="coupons", verbose_name="Courses")
 
-    # Tracking
+    # If coupon is private then particular student can apply
+    coupon_type = models.CharField(max_length=10, choices=COUPON_TYPE_CHOICES, default='public',
+                                   verbose_name="Coupon Type")
+    students = ArrayField(models.IntegerField(), null=True, blank=True, verbose_name="students")
+
+    # if all course means, is_all_courses will be true if not then false
+    courses = ArrayField(models.IntegerField(), null=True, blank=True, verbose_name="Courses")
+    is_all_courses = models.BooleanField(default=False)
+
     total_applied = models.PositiveIntegerField(default=0, verbose_name="Total Applied")
+
 
     class Meta:
         verbose_name = "Coupon"

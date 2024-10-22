@@ -1,13 +1,11 @@
+from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 
 from abstract.views import CustomResponseMixin
-from config.razor_payment import RazorpayService
 from .models import Category, Subcategory, Course, Folder, File
 from .serializers import CategorySerializer, SubcategorySerializer, CourseSerializer, CoursePriceUpdateSerializer, \
     ListCourseSerializer, FolderSerializer, FileSerializer
@@ -87,32 +85,6 @@ class CourseViewSet(CustomResponseMixin):
                          "effective_price": serializer.instance.effective_price
                          }, status=status.HTTP_200_OK)
 
-    @action(detail=True, methods=['post'], url_path='create-folder')
-    def create_folder(self, request, pk=None):
-        course = self.get_object()
-        request.data['course'] = course.id  # Set the course ID
-        serializer = FolderSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    @action(detail=True, methods=['post'], url_path='folders/(?P<folder_id>[^/.]+)/create-file')
-    def create_file(self, request, pk, folder_id=None):
-        # If no folder_id is provided, default to the root (Home) folder
-        if folder_id is None:
-            # Get or create the Home folder
-            home_folder, created = Folder.objects.get_or_create(title='Home', course=self.get_object())
-            folder = home_folder
-        else:
-            folder = Folder.objects.get(id=folder_id)  # Fetch the folder
-
-        request.data['folder'] = folder.id  # Set the folder ID
-        serializer = FileSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
     def build_breadcrumb(self, folder):
         breadcrumb = []
         current_folder = folder
@@ -176,3 +148,75 @@ class CourseViewSet(CustomResponseMixin):
                         status=status.HTTP_200_OK)
 
 
+class FolderFileViewSet(viewsets.ViewSet):
+    """
+    A ViewSet to handle operations related to Folders and Files within a Course.
+    """
+    queryset = Course.objects.all()
+    # Helper method to get the course
+    def get_course(self, pk):
+        return get_object_or_404(Course, pk=pk)
+
+    # 1. Create a new folder within the course
+    @action(detail=True, methods=['post'], url_path='create-folder')
+    def create_folder(self, request, pk=None):
+        course = self.get_course(pk)  # Get the course using pk (course_id)
+        request.data['course'] = course.id  # Set the course ID in the request data
+        serializer = FolderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    # 2. Create a new file within a folder in the course
+    @action(detail=True, methods=['post'], url_path='folders/(?P<folder_id>[^/.]+)/create-file')
+    def create_file(self, request, pk=None, folder_id=None):
+        course = self.get_course(pk)  # Get the course
+        # If no folder_id is provided, use or create the Home folder
+        if folder_id is None:
+            folder, created = Folder.objects.get_or_create(title='Home', course=course)
+        else:
+            folder = get_object_or_404(Folder, id=folder_id)
+
+        request.data['folder'] = folder.id  # Set folder ID in request data
+        serializer = FileSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    # 3. Rename a folder
+    @action(detail=True, methods=['patch'], url_path='folders/(?P<folder_id>[^/.]+)/rename-folder')
+    def rename_folder(self, request, pk=None, folder_id=None):
+        folder = get_object_or_404(Folder, id=folder_id)
+        folder.title = request.data.get('title', folder.title)  # Update folder title
+        folder.save()
+        return Response({'status': 'Folder renamed', 'title': folder.title}, status=status.HTTP_200_OK)
+
+    # 4. Rename a file
+    @action(detail=True, methods=['patch'], url_path='files/(?P<file_id>[^/.]+)/rename-file')
+    def rename_file(self, request, pk=None, file_id=None):
+        file = get_object_or_404(File, id=file_id)
+        file.title = request.data.get('title', file.title)  # Update file title
+        file.save()
+        return Response({'status': 'File renamed', 'title': file.title}, status=status.HTTP_200_OK)
+
+    # 5. Delete a folder
+    @action(detail=True, methods=['delete'], url_path='folders/(?P<folder_id>[^/.]+)/delete-folder')
+    def delete_folder(self, request, pk=None, folder_id=None):
+        folder = get_object_or_404(Folder, id=folder_id)
+        folder.delete()  # Delete the folder
+        return Response({'status': 'Folder deleted'}, status=status.HTTP_204_NO_CONTENT)
+
+    # 6. Delete a file
+    @action(detail=True, methods=['delete'], url_path='files/(?P<file_id>[^/.]+)/delete-file')
+    def delete_file(self, request, pk=None, file_id=None):
+        file = get_object_or_404(File, id=file_id)
+        file.delete()  # Delete the file
+        return Response({'status': 'File deleted'}, status=status.HTTP_204_NO_CONTENT)
+
+    # 7. Toggle lock status of a file (lock/unlock)
+    @action(detail=True, methods=['patch'], url_path='files/(?P<file_id>[^/.]+)/toggle-lock-file')
+    def toggle_lock_file(self, request, pk=None, file_id=None):
+        file = get_object_or_404(File, id=file_id)
+        file.is_locked = not file.is_locked  # Toggle the lock status
+        file.save()
+        return Response({'status': 'Lock status toggled', 'is_locked': file.is_locked}, status=status.HTTP_200_OK)

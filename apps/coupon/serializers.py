@@ -8,11 +8,16 @@ class CouponSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Coupon
-        # fields = '__all__'  # Specify fields if you need to limit them
-        exclude = ('courses',)
+        fields = '__all__'
 
     def create(self, validated_data):
         request = self.context.get('request')
+        courses = validated_data.get('courses')
+        if courses:
+            validated_data['is_all_courses'] = False
+        else:
+            validated_data['is_all_courses'] = True
+
         coupon = Coupon.objects.create(created_by=request.user, **validated_data)
 
         return coupon

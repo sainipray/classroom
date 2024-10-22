@@ -3,9 +3,9 @@ from rest_framework.viewsets import GenericViewSet
 
 from abstract.views import ReadOnlyCustomResponseMixin
 from .models import Batch, Enrollment, \
-    BatchPurchaseOrder, LiveClass  # Assuming you have an Enrollment model for student batch enrollments
+    BatchPurchaseOrder, LiveClass, Attendance  # Assuming you have an Enrollment model for student batch enrollments
 from .student_serializers import StudentBatchSerializer, StudentRetrieveBatchSerializer, \
-    StudentLiveClassSerializer  # Create these serializers
+    StudentLiveClassSerializer, StudentAttendanceSerializer  # Create these serializers
 
 
 class AvailableBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelViewSet):
@@ -53,12 +53,24 @@ class PurchasedBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelV
         ).select_related('created_by').filter(is_published=True)  # Ensure the batches are published
 
 
-class LiveClassesViewSet(mixins.ListModelMixin,
-                         GenericViewSet):
+class StudentLiveClassesViewSet(mixins.ListModelMixin,
+                                GenericViewSet):
     serializer_class = StudentLiveClassSerializer
     queryset = LiveClass.objects.all()
 
     def get_queryset(self):
+        # TODO check current user have batch access
         batch = Batch.objects.get(id=self.kwargs['batch'])
         live_classes = batch.live_classes.all()
         return live_classes
+
+
+class StudentBatchAttendanceViewSet(mixins.ListModelMixin, GenericViewSet):
+    serializer_class = StudentAttendanceSerializer
+    queryset = Attendance.objects.all()
+
+    def get_queryset(self):
+        # TODO check current user have batch access
+        batch = Batch.objects.get(id=self.kwargs['batch'])
+        user = self.request.user
+        return Attendance.objects.filter(student=user, live_class__batch=batch)
