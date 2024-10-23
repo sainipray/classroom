@@ -34,4 +34,4 @@ class PurchasedCourseCourseViewSet(ReadOnlyCustomResponseMixin):
             id__in=CoursePurchaseOrder.objects.filter(
                 student=self.request.user
             ).values_list('course_id', flat=True)
-        ).select_related('created_by').prefetch_related('coupons').filter(is_published=True)
+        ).filter(is_published=True)

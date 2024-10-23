@@ -83,9 +83,8 @@ class Student(TimeStampedModel):
         verbose_name="User",
     )
     about = models.TextField(blank=True, verbose_name="About")
-    profile_photo = models.ImageField(
-        upload_to="profile_photos/", blank=True, verbose_name="Profile Photo"
-    )
+    profile_photo = models.CharField(blank=True, verbose_name="Profile Photo"
+                                     )
 
     # Parent Information
     mother_name = models.CharField(
@@ -99,8 +98,7 @@ class Student(TimeStampedModel):
         blank=True, null=True, region="IN", verbose_name="Parent Mobile Number"
     )
     parent_email = models.EmailField(blank=True, verbose_name="Parent Email")
-    parent_profile_photo = models.ImageField(
-        upload_to="parent_photos/",
+    parent_profile_photo = models.CharField(
         blank=True,
         verbose_name="Parent Profile Photo",
     )
@@ -137,16 +135,13 @@ class Student(TimeStampedModel):
         max_length=100, blank=True, verbose_name="College Name"
     )
     marks_x = models.FloatField(blank=True, null=True, verbose_name="Marks in X (%)")
-    x_result = models.FileField(
-        upload_to="results/x/", blank=True, verbose_name="X Result"
-    )
+    x_result = models.CharField(blank=True, verbose_name="X Result"
+                                )
     marks_xii = models.FloatField(blank=True, null=True, verbose_name="Marks in XII (%)")
-    xii_result = models.FileField(
-        upload_to="results/xii/", blank=True, verbose_name="XII Result"
-    )
+    xii_result = models.CharField(blank=True, verbose_name="XII Result"
+                                  )
     marks_college = models.FloatField(blank=True, null=True, verbose_name="Marks in College (%)")
-    college_result = models.FileField(
-        upload_to="results/college/",
+    college_result = models.CharField(
         blank=True,
         verbose_name="College Result",
     )
@@ -156,6 +151,7 @@ class Student(TimeStampedModel):
 
     class Meta:
         ordering = ('-created',)
+
 
 class Instructor(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='instructor', null=True, blank=True)
