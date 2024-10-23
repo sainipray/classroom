@@ -4,6 +4,7 @@ from datetime import timedelta
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import generics, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -155,3 +156,12 @@ class StudentViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response({"message": "Student information Updated"}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    def toggle_active(self, request, pk=None):
+        student = self.get_object()  # Get the student user instance
+        student.is_active = not student.is_active  # Toggle active status
+        student.save()  # Save the changes
+
+        status_message = "activated" if student.is_active else "deactivated"
+        return Response({"message": f"Student account has been {status_message}."}, status=status.HTTP_200_OK)

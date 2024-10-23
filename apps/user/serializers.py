@@ -62,8 +62,14 @@ class LoginSerializer(serializers.Serializer):
     phone_number = PhoneNumberField(region='IN')
 
     def validate_phone_number(self, value):
-        if not CustomUser.objects.filter(phone_number=value).exists():
+        try:
+            user = CustomUser.objects.get(phone_number=value)
+        except CustomUser.DoesNotExist:
             raise ValidationError("User with this phone number does not exist.")
+
+        if not user.is_active:
+            raise ValidationError("This account is inactive. Please contact the admin for activation.")
+
         return value
 
 
@@ -76,6 +82,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             "phone_number",
             'role'
         ]
+
 
 class CustomUserSerializer(serializers.ModelSerializer):
     phone_number = PhoneNumberField(region="IN")

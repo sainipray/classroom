@@ -13,7 +13,7 @@ class StudentBatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Batch
         fields = ['id', 'name', 'batch_code', 'start_date', 'subject', 'live_class_link',
-                  'created_by', 'fee_structure', 'installment_details']
+                  'created_by', 'fee_structure', 'installment_details', 'thumbnail']
 
     def get_installment_details(self, obj):
         request = self.context.get('request')
