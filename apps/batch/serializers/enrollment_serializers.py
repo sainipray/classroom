@@ -77,11 +77,12 @@ class BatchStudentUserSerializer(StudentUserSerializer):
 
     def create(self, validated_data):
         batch = validated_data.pop('batch')  # Extract the batch from validated data
+        request = self.context['request']
         with transaction.atomic():
             user = CustomUser.objects.create_user(role=Roles.STUDENT, **validated_data)
             student = Student.objects.create(user=user)
 
             # Create enrollment for the newly created student
-            Enrollment.objects.create(batch=batch, student=user)
+            Enrollment.objects.create(batch=batch, student=user, is_approved=True, approved_by=request.user)
 
             return user

@@ -3,6 +3,7 @@ import string
 
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.utils import timezone
 from django_extensions.db.models import TimeStampedModel
 
 User = get_user_model()
@@ -27,10 +28,19 @@ class Subject(TimeStampedModel):
 
 
 class FeeStructure(TimeStampedModel):
+    STRUCTURE_FREQUENCIES = [
+        ('weekly', 'Weekly'),
+        ('monthly', 'Monthly'),
+    ]
     structure_name = models.CharField(max_length=255, verbose_name="Structure Name")
     fee_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Fee Amount")
     installments = models.PositiveIntegerField(default=1, verbose_name="Number of Installments")
     total_amount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Total Amount")
+
+    # New fields for installment frequency
+    frequency = models.CharField(max_length=10, choices=STRUCTURE_FREQUENCIES, verbose_name="Installment Frequency",
+                                 null=True)
+    number_of_values = models.PositiveIntegerField(default=1, verbose_name="Number of Values", null=True)
 
     def save(self, **kwargs):
         # Automatically calculate the total amount
@@ -215,6 +225,7 @@ class Enrollment(TimeStampedModel):
     student = models.ForeignKey(User, related_name="enrollments", on_delete=models.CASCADE)
     is_approved = models.BooleanField(default=False, verbose_name="Is Approved")
     approved_by = models.ForeignKey(User, verbose_name="Approved By", on_delete=models.CASCADE, null=True, blank=True)
+    batch_joined_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ('batch', 'student')
@@ -224,6 +235,13 @@ class Enrollment(TimeStampedModel):
 
     def __str__(self):
         return f"{self.student} in {self.batch}"
+
+    def save(self, *args, **kwargs):
+        # Check if the enrollment is being approved
+        if self.is_approved and not self.batch_joined_date:
+            self.batch_joined_date = timezone.now()  # Set current date and time
+
+        super().save(*args, **kwargs)  # Call the parent class's save method
 
 
 class LiveClass(TimeStampedModel):

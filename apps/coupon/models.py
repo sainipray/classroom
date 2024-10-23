@@ -3,6 +3,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models, transaction
 from django.utils import timezone
 from django_extensions.db.models import TimeStampedModel
+from rest_framework.exceptions import ValidationError
 
 User = get_user_model()
 
@@ -48,7 +49,6 @@ class Coupon(TimeStampedModel):
 
     total_applied = models.PositiveIntegerField(default=0, verbose_name="Total Applied")
 
-
     class Meta:
         verbose_name = "Coupon"
         verbose_name_plural = "Coupons"
@@ -68,10 +68,46 @@ class Coupon(TimeStampedModel):
             self.end_datetime = None
         super().save(**kwargs)
 
-    def apply_discount(self, original_price):
+    def apply_discount(self, original_price: float, user, course):
         """
         Apply the coupon discount to the original price and return both discounted price and discount amount.
+
+        Parameters:
+        - original_price: The original price before discount.
+        - user: The user applying the coupon (required).
+        - course: The course for which the coupon is being applied (required).
+
+        Returns:
+        - discounted_price: The price after applying the discount.
+        - discount_amount: The amount discounted.
+
+        Raises:
+        - ValueError: If the coupon is not valid for the user or course.
+        - ValidationError: If the original price does not meet requirements.
         """
+
+        # Validate if the coupon is still valid
+        if self.end_datetime and timezone.now() > self.end_datetime:
+            raise ValidationError("Coupon has expired.")
+
+        if not self.status:
+            raise ValidationError("Coupon is not active.")
+
+        # Validate the user for private coupons
+        if self.coupon_type == 'private':
+            if user.id not in self.students:
+                raise ValidationError("This coupon is not applicable to this user.")
+
+        # Validate course eligibility
+        if not self.is_all_courses:
+            if course.id not in self.courses:
+                raise ValidationError("This coupon is not applicable to this course.")
+
+        # Check for minimum order value
+        if original_price < self.min_order_value:
+            raise ValidationError("The original price does not meet the minimum order value requirement.")
+
+        # Calculate the discount amount
         if self.discount_type == 'fixed':
             discount_amount = self.discount_value
         elif self.discount_type == 'percentage':
@@ -81,7 +117,9 @@ class Coupon(TimeStampedModel):
         else:
             discount_amount = 0
 
+        # Ensure the discount doesn't exceed the original price
         discounted_price = max(float(original_price) - float(discount_amount), 0)
+
         return discounted_price, discount_amount
 
     def is_valid(self):

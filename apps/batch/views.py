@@ -142,7 +142,7 @@ class EnrollmentViewSet(CustomResponseMixin):
 
     @action(detail=False, methods=['post'], url_path='add-student')
     def add_student(self, request):
-        student_serializer = BatchStudentUserSerializer(data=request.data)
+        student_serializer = BatchStudentUserSerializer(data=request.data, context={'request': request})
         student_serializer.is_valid(raise_exception=True)
 
         # Create the student and enroll them

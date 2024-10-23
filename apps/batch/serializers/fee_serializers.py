@@ -6,4 +6,4 @@ from apps.batch.models import FeeStructure
 class FeeStructureSerializer(serializers.ModelSerializer):
     class Meta:
         model = FeeStructure
-        fields = ['id', 'structure_name', 'fee_amount', 'installments', 'total_amount']
+        fields = ['id', 'structure_name', 'fee_amount', 'installments', 'total_amount', 'frequency', 'number_of_values']

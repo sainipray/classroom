@@ -74,11 +74,13 @@ class PurchaseCourseSerializer(serializers.Serializer):
         return attrs
 
 
+
 class ApplyCouponSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
     coupon_code = serializers.CharField(max_length=50)
 
     def validate_course_id(self, value):
+        # Check if the course is valid and published
         if not Course.objects.filter(id=value, is_published=True).exists():
             raise serializers.ValidationError("Invalid or unpublished course ID.")
         return value
@@ -111,19 +113,26 @@ class ApplyCouponSerializer(serializers.Serializer):
         course_id = self.initial_data.get('course_id')
         if course_id:
             course = Course.objects.get(id=course_id)
-            if coupon.courses.exists() and course not in coupon.courses.all():
+            if not coupon.is_all_courses and coupon.courses and course.id not in coupon.courses:
                 raise serializers.ValidationError("This coupon is not applicable to the selected course.")
+
+            # Check if the coupon is private and the user is eligible
+            if coupon.coupon_type == 'private' and user.id not in coupon.students:
+                raise serializers.ValidationError("This coupon is not applicable to this user.")
 
         return coupon
 
     def validate(self, attrs):
         # Ensure that if a coupon is provided, it's applicable to the selected course
+        request = self.context['request']
         coupon = attrs.get('coupon_code')
         course_id = attrs.get('course_id')
+        course = Course.objects.get(id=course_id)
         if coupon and course_id:
-            course = Course.objects.get(id=course_id)
-            if coupon.courses.exists() and course not in coupon.courses.all():
+            if coupon.courses and not coupon.is_all_courses and course.id not in coupon.courses:
                 raise serializers.ValidationError("This coupon is not applicable to the selected course.")
+        # Just for checking coupon all validation passed
+        coupon.apply_discount(course.effective_price, request.user, course)
         return attrs
 
 

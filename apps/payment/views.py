@@ -123,7 +123,7 @@ class PurchaseCourseView(APIView):
         price_after_coupon = None
         if coupon:
             # Apply discount using the enhanced apply_discount method
-            price_after_coupon, discount_applied = coupon.apply_discount(original_price)
+            price_after_coupon, discount_applied = coupon.apply_discount(original_price, request.user, course)
 
             final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price),
                                                                             Decimal(price_after_coupon))
@@ -385,35 +385,31 @@ class ApplyCouponView(APIView):
 
     def post(self, request):
         serializer = ApplyCouponSerializer(data=request.data, context={'request': request})
-        if serializer.is_valid():
-            course_id = serializer.validated_data['course_id']
-            coupon = serializer.validated_data['coupon_code']
-            course = get_object_or_404(Course, id=course_id)
-            original_price = course.effective_price or 0
+        serializer.is_valid(raise_exception=True)
+        course_id = serializer.validated_data['course_id']
+        coupon = serializer.validated_data['coupon_code']
+        course = get_object_or_404(Course, id=course_id)
+        original_price = course.effective_price
 
-            # Apply discount
-            price_after_coupon, discount_amount = coupon.apply_discount(original_price)
-            final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price),
-                                                                            Decimal(price_after_coupon))
-
-            # Prepare response data
-            response_data = {
-                "discounted_price": float(price_after_coupon),
-                "discount_amount": float(discount_amount),
-                "coupon": {
-                    "id": coupon.id,
-                    "code": coupon.code,
-                    "name": coupon.name,
-                    "discount_type": coupon.discount_type,
-                    "discount_value": float(coupon.discount_value),
-                    "max_discount_amount": float(coupon.max_discount_amount) if coupon.max_discount_amount else None
-                }
+        price_after_coupon, discount_amount = coupon.apply_discount(original_price, request.user, course)
+        final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price),
+                                                                        Decimal(price_after_coupon))
+        # Prepare response data
+        response_data = {
+            "discounted_price": float(price_after_coupon),
+            "discount_amount": float(discount_amount),
+            "coupon": {
+                "id": coupon.id,
+                "code": coupon.code,
+                "name": coupon.name,
+                "discount_type": coupon.discount_type,
+                "discount_value": float(coupon.discount_value),
+                "max_discount_amount": float(coupon.max_discount_amount) if coupon.max_discount_amount else None
             }
-            response_data.update(final_price_responses)
+        }
+        response_data.update(final_price_responses)
 
-            return Response(response_data, status=status.HTTP_200_OK)
-        else:
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 class PurchaseBatchView(APIView):
