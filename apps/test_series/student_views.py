@@ -11,11 +11,11 @@ class AvailableTestSeriesViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StudentTestSeriesSerializer
 
     def get_queryset(self):
-        purchased_test_series_ids = TestSeriesPurchaseOrder.objects.filter(
-            student=self.request.user
-        ).values_list('test_series_id', flat=True)
+        # purchased_test_series_ids = TestSeriesPurchaseOrder.objects.filter(
+        #     student=self.request.user
+        # ).values_list('test_series_id', flat=True)
 
-        available_test_series = TestSeries.objects.filter(is_published=True).exclude(id__in=purchased_test_series_ids)
+        available_test_series = TestSeries.objects.filter(is_published=True)
         return available_test_series
 
 

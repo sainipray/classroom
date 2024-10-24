@@ -274,6 +274,85 @@ class LiveClass(TimeStampedModel):
         return self.attendance.live_class_link
 
 
+# OfflineClass model
+class OfflineClass(TimeStampedModel):
+    class ClassType(models.TextChoices):
+        REGULAR = 'regular', 'Regular Class'
+        ONE_TIME = 'one_time', 'One-time Class'
+
+    class_type = models.CharField(
+        max_length=20,
+        choices=ClassType.choices,
+        default=ClassType.REGULAR,
+        verbose_name='Class Type'
+    )
+    faculty = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Faculty'
+    )
+
+    class Meta:
+        verbose_name = 'Offline Class'
+        verbose_name_plural = 'Offline Classes'
+        ordering = ['-created']  # Order by the latest created class
+
+    def __str__(self):
+        return f"{self.faculty} - {self.get_class_type_display()}"
+
+
+# TimeSlot model
+class TimeSlot(TimeStampedModel):
+    class DaysOfWeek(models.TextChoices):
+        MONDAY = 'Mon', 'Monday'
+        TUESDAY = 'Tue', 'Tuesday'
+        WEDNESDAY = 'Wed', 'Wednesday'
+        THURSDAY = 'Thu', 'Thursday'
+        FRIDAY = 'Fri', 'Friday'
+        SATURDAY = 'Sat', 'Saturday'
+        SUNDAY = 'Sun', 'Sunday'
+
+    batch_class = models.ForeignKey(
+        OfflineClass,
+        related_name='time_slots',
+        on_delete=models.CASCADE,
+        verbose_name='Batch Class'
+    )
+    day = models.CharField(
+        max_length=3,
+        choices=DaysOfWeek.choices,
+        verbose_name='Day of the Week'
+    )
+
+    class Meta:
+        verbose_name = 'Time Slot'
+        verbose_name_plural = 'Time Slots'
+        ordering = ['day']  # Order by day of the week
+
+    def __str__(self):
+        return f"{self.batch_class} - {self.get_day_display()}"
+
+
+# Schedule model
+class Schedule(TimeStampedModel):
+    timeslot = models.ForeignKey(
+        TimeSlot,
+        related_name='schedules',
+        on_delete=models.CASCADE,
+        verbose_name='Time Slot'
+    )
+    start_time = models.TimeField(verbose_name='Start Time')
+    end_time = models.TimeField(verbose_name='End Time')
+
+    class Meta:
+        verbose_name = 'Schedule'
+        verbose_name_plural = 'Schedules'
+        ordering = ['-created']  # Order by latest schedule
+
+    def __str__(self):
+        return f"{self.timeslot.get_day_display()} ({self.start_time} - {self.end_time})"
+
+
 class Attendance(TimeStampedModel):
     student = models.ForeignKey(User, related_name="attendances", on_delete=models.CASCADE)
     live_class = models.OneToOneField(LiveClass, related_name="attendance", on_delete=models.CASCADE)

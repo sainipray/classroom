@@ -12,7 +12,7 @@ from rest_framework.viewsets import GenericViewSet
 from abstract.views import CustomResponseMixin
 from config.live_video import MeritHubAPI
 from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial, FeeStructure, Folder, File, \
-    BatchPurchaseOrder
+    BatchPurchaseOrder, OfflineClass
 from .serializers.attendance_serializers import AttendanceSerializer
 from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSerializer, SubjectSerializer, \
     FolderSerializer, FileSerializer
@@ -21,6 +21,7 @@ from .serializers.enrollment_serializers import EnrollmentSerializer, BatchStude
 from .serializers.fee_serializers import FeeStructureSerializer
 from .serializers.liveclass_serializers import LiveClassSerializer, RetrieveLiveClassSerializer, \
     CreateLiveClassSerializer
+from .serializers.offline_classes_serializers import OfflineClassSerializer
 from .serializers.studymaterial_serializer import StudyMaterialSerializer
 from ..utils.functions import merge_and_sort_items
 
@@ -373,3 +374,8 @@ class FolderFileViewSet(viewsets.ViewSet):
         file.is_locked = not file.is_locked  # Toggle the lock status
         file.save()
         return Response({'status': 'Lock status toggled', 'is_locked': file.is_locked}, status=status.HTTP_200_OK)
+
+
+class OfflineClassViewSet(viewsets.ModelViewSet):
+    queryset = OfflineClass.objects.all()
+    serializer_class = OfflineClassSerializer

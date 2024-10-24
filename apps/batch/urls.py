@@ -4,7 +4,8 @@ from rest_framework.routers import DefaultRouter
 from .student_views import AvailableBatchViewSet, PurchasedBatchViewSet, StudentLiveClassesViewSet, \
     StudentBatchAttendanceViewSet
 from .views import (SubjectViewSet, BatchViewSet, EnrollmentViewSet, LiveClassViewSet, AttendanceViewSet,
-                    StudyMaterialViewSet, CreateLiveClassView, FeeStructureViewSet, FeesRecordAPI, FolderFileViewSet)
+                    StudyMaterialViewSet, CreateLiveClassView, FeeStructureViewSet, FeesRecordAPI, FolderFileViewSet,
+                    OfflineClassViewSet)
 
 router = DefaultRouter()
 router.register(r'subjects', SubjectViewSet)
@@ -15,6 +16,7 @@ router.register(r'study-materials', StudyMaterialViewSet)
 router.register(r'enrollments', EnrollmentViewSet)
 router.register(r'fee-structures', FeeStructureViewSet)
 router.register(r'content', FolderFileViewSet, basename='batch-content')
+router.register(r'offline-classes', OfflineClassViewSet)
 
 student_router = DefaultRouter()
 student_router.register(r'student/available-batches', AvailableBatchViewSet, basename='available-batches')
