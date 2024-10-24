@@ -107,7 +107,9 @@ class Batch(TimeStampedModel):
         installments = []
         for installment_number in range(1, self.fee_structure.installments + 1):
             try:
-                purchase_order = self.purchase_orders.get(student=user, installment_number=installment_number)
+                purchase_order = self.purchase_orders.get(student=user,
+                                                          installment_number=installment_number,
+                                                          is_paid=True)
                 installment_info = {
                     'installment_number': installment_number,
                     'amount': float(purchase_order.amount),
