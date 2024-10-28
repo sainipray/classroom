@@ -91,7 +91,8 @@ class Course(TimeStampedModel):
         # Initialize counts
         counts = {
             'videos': 0,
-            'images': 0
+            'images': 0,
+            'total_files': 0
         }
 
         def fetch_folder_structure(folder):
@@ -113,6 +114,8 @@ class Course(TimeStampedModel):
                     counts['videos'] += 1
                 elif extension in IMAGE_EXTENSIONS:
                     counts['images'] += 1
+
+                counts['total_files'] += 1
 
                 # TODO we don't need to show urls of each file that is locked or if student not purchased course
                 # Append file data
@@ -138,7 +141,8 @@ class Course(TimeStampedModel):
         data = {
             'directory': folder_structure,
             'videos': counts['videos'],
-            'images': counts['images']
+            'images': counts['images'],
+            'total_files': counts['total_files']
         }
 
         return data
