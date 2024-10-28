@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.batch.models import Schedule, TimeSlot, OfflineClass
+from apps.batch.models import Schedule, TimeSlot, OfflineClass, Batch, BatchPurchaseOrder, Enrollment
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
@@ -93,3 +93,25 @@ class OfflineClassSerializer(serializers.ModelSerializer):
                         Schedule.objects.create(timeslot=time_slot, **schedule_data)
 
         return instance
+
+
+class JoinBatchSerializer(serializers.Serializer):
+    batch = serializers.IntegerField()
+
+    def validate_batch(self, value):
+        # Check if the batch exists
+        try:
+            batch = Batch.objects.get(id=value)
+        except Batch.DoesNotExist:
+            raise serializers.ValidationError("Batch does not exist.")
+        return batch
+
+    def validate(self, attrs):
+        student = self.context['request'].user
+
+        # Check if the student is already in the batch
+        if BatchPurchaseOrder.objects.filter(batch=attrs['batch'], student=student).exists():
+            raise serializers.ValidationError("Student is already added to this batch.")
+        if Enrollment.objects.filter(batch=attrs['batch'], student=student).exists():
+            raise serializers.ValidationError("Student is already in enrolled.")
+        return attrs

@@ -14,7 +14,7 @@ class AvailableBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelV
 
     def get_queryset(self):
         # Retrieve all Enrollment records for the authenticated user
-        enrolled_batch_ids = Enrollment.objects.filter(student=self.request.user).values_list('batch_id', flat=True)
+        enrolled_batch_ids = Enrollment.objects.filter(student=self.request.user, is_approved=True).values_list('batch_id', flat=True)
 
         # Retrieve BatchPurchaseOrder IDs associated with the authenticated user
         purchased_batch_ids = BatchPurchaseOrder.objects.filter(transaction__user=self.request.user).values_list(
@@ -38,7 +38,7 @@ class PurchasedBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelV
 
     def get_queryset(self):
         # Retrieve batch IDs for enrolled batches for the authenticated user
-        enrolled_batches = Enrollment.objects.filter(student=self.request.user).values_list('batch_id', flat=True)
+        enrolled_batches = Enrollment.objects.filter(student=self.request.user, is_approved=True).values_list('batch_id', flat=True)
 
         # Retrieve batch IDs for purchased batches for the authenticated user
         purchased_batches = BatchPurchaseOrder.objects.filter(transaction__user=self.request.user).values_list(

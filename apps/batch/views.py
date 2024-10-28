@@ -21,7 +21,7 @@ from .serializers.enrollment_serializers import EnrollmentSerializer, BatchStude
 from .serializers.fee_serializers import FeeStructureSerializer
 from .serializers.liveclass_serializers import LiveClassSerializer, RetrieveLiveClassSerializer, \
     CreateLiveClassSerializer
-from .serializers.offline_classes_serializers import OfflineClassSerializer
+from .serializers.offline_classes_serializers import OfflineClassSerializer, JoinBatchSerializer
 from .serializers.studymaterial_serializer import StudyMaterialSerializer
 from ..utils.functions import merge_and_sort_items
 
@@ -379,3 +379,12 @@ class FolderFileViewSet(viewsets.ViewSet):
 class OfflineClassViewSet(viewsets.ModelViewSet):
     queryset = OfflineClass.objects.all()
     serializer_class = OfflineClassSerializer
+
+
+class StudentJoinBatchView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = JoinBatchSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        batch = serializer.validated_data['batch']
+        Enrollment.objects.create(batch=batch, student=request.user)
+        return Response({"message": "Successfully joined the batch."}, status=status.HTTP_201_CREATED)
