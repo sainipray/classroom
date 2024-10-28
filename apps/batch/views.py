@@ -1,5 +1,9 @@
+from datetime import timedelta
+
+from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, status, mixins
 from rest_framework.decorators import action
@@ -276,27 +280,88 @@ class FeeStructureViewSet(CustomResponseMixin):
 class FeesRecordAPI(ListAPIView):
 
     def get(self, request, *args, **kwargs):
-        purchase_orders = BatchPurchaseOrder.objects.all()
-        # Prepare data for each student in the batch
-        students_fees = []
-        for order in purchase_orders:
-            batch = order.batch
-            paid_fees = BatchPurchaseOrder.objects.filter(batch=batch, student=order.student, is_paid=True).aggregate(
-                total_paid=Sum('amount'))['total_paid'] or 0
-            total_fees = batch.fee_structure.total_amount if batch.fee_structure else 0
-            outstanding_fees = total_fees - paid_fees
-            students_fees.append({
-                'student_name': order.student.full_name,
-                'student_email': order.student.email,
-                'total_fees': total_fees,
-                'paid_fees': paid_fees,
-                'outstanding_fees': outstanding_fees,
-                'batch_name': batch.name,
+        now = timezone.now()
+        unpaid_fees = []
+        upcoming_fees = []
+        paid_fees = []
+        # 1. Fetch all BatchPurchaseOrders marked as paid
+        paid_fees_data = BatchPurchaseOrder.objects.filter(is_paid=True).values(
+            'student__full_name', 'batch__name', 'payment_date'
+        ).annotate(total_paid=Sum('amount'))
+
+        for data in paid_fees_data:
+            paid_fees.append({
+                'student_name': data['student__full_name'],
+                'amount': data['total_paid'],
+                'batch_name': data['batch__name'],
+                'payment_date': data.get('payment_date', ""),
             })
 
-        # Apply pagination to the data
-        page = self.paginate_queryset(students_fees)
-        return self.get_paginated_response(page)
+        # 2. Fetch approved enrollments with a batch, student, and batch_joined_date
+        enrollments = Enrollment.objects.filter(is_approved=True).select_related(
+            'batch__fee_structure', 'student'
+        )
+
+        for enrollment in enrollments:
+            batch = enrollment.batch
+            student = enrollment.student
+            fee_structure = batch.fee_structure
+            if not fee_structure:
+                continue  # Skip if there's no fee structure
+
+            # Get frequency, number_of_values, and installments
+            frequency = fee_structure.frequency
+            interval = fee_structure.number_of_values
+            num_installments = fee_structure.installments
+            fee_amount = fee_structure.fee_amount
+            join_date = enrollment.batch_joined_date
+
+            # Define date increment based on frequency and number_of_values
+            if frequency == 'weekly':
+                date_increment = timedelta(weeks=interval)
+            elif frequency == 'monthly':
+                date_increment = relativedelta(months=interval)
+            else:
+                date_increment = relativedelta(months=1)  # Default to monthly if frequency is unknown
+
+            for installment_num in range(1, num_installments + 1):
+                due_date = join_date + (installment_num - 1) * date_increment
+
+                # Check if a corresponding BatchPurchaseOrder already exists
+                order_exists = BatchPurchaseOrder.objects.filter(
+                    student=student,
+                    batch=batch,
+                    installment_number=installment_num,
+                ).exists()
+
+                if order_exists:
+                    continue  # Skip if BatchPurchaseOrder record already exists
+
+                # Categorize based on due date and payment status
+                record = {
+                    'student_name': student.full_name,
+                    'student_email': student.email,
+                    'batch_name': batch.name,
+                    'installment_number': installment_num,
+                    'amount': fee_amount,
+                    'due_date': due_date,
+                }
+
+                if due_date < now:
+                    # Past-due unpaid installment
+                    unpaid_fees.append(record)
+                else:
+                    # Upcoming installment
+                    upcoming_fees.append(record)
+
+        # Structure response with grouped data
+        response_data = {
+            'paid_fees': paid_fees,
+            'unpaid_fees': unpaid_fees,
+            'upcoming_fees': upcoming_fees,
+        }
+
+        return Response(response_data)
 
 
 class FolderFileViewSet(viewsets.ViewSet):
