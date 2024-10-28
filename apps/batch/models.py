@@ -81,13 +81,15 @@ class Batch(TimeStampedModel):
 
     @property
     def enrolled_students(self):
-        return [{'name': enroll.student.full_name, 'phone_number': enroll.student.phone_number.as_e164} for enroll in
-                self.enrollments.filter(is_approved=True)]
+        return [{'id': enroll.student.id,
+                 'full_name': enroll.student.full_name,
+                 'phone_number': enroll.student.phone_number.as_e164}
+                for enroll in self.enrollments.filter(is_approved=True)]
 
     @property
     def student_join_request(self):
         return [{'id': enroll.id,
-                 'name': enroll.student.full_name,
+                 'full_name': enroll.student.full_name,
                  'phone_number': enroll.student.phone_number.as_e164} for enroll in
                 self.enrollments.filter(is_approved=False)]
 

@@ -1,15 +1,16 @@
 # accounts/views.py
-from datetime import timedelta
 
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, status, viewsets
+from rest_framework import generics, status, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
+from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from abstract.views import CustomResponseMixin
 from config.sms.textlocal import LOGIN_OTP_KEY, SIGNUP_OTP_KEY, SMSManager
 from .models import CustomUser, Roles
 from .schema_definitions import (
@@ -120,7 +121,7 @@ class UserProfileAPIView(generics.RetrieveUpdateAPIView):
         return self.request.user
 
 
-class UserCreateListView(generics.ListCreateAPIView):
+class UserViewSet(CustomResponseMixin):
     queryset = CustomUser.objects.exclude(role=Roles.STUDENT)
     serializer_class = CustomUserSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
@@ -132,8 +133,6 @@ class UserCreateListView(generics.ListCreateAPIView):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
-
-
 
 
 class StudentViewSet(viewsets.ModelViewSet):
@@ -153,8 +152,10 @@ class StudentViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         student = instance.student
         serializer = StudentSerializer(student, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
+        user_serializer = self.get_serializer(instance=instance, data=request.data)
+        serializer.is_valid(raise_exception=True) and user_serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+        self.perform_update(user_serializer)
         return Response({"message": "Student information Updated"}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['post'])

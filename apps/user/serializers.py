@@ -139,8 +139,42 @@ class StudentUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'email', 'phone_number', 'full_name', 'role', 'is_active', 'date_joined', 'student']
 
+    def validate_email(self, value):
+        # Check if the email already exists in the database
+        if self.instance:
+            # If updating, exclude the current user from the check
+            if CustomUser.objects.filter(email=value).exclude(id=self.instance.id).exists():
+                raise ValidationError("Email is already in use.")
+        else:
+            # If creating, just check for existence
+            if CustomUser.objects.filter(email=value).exists():
+                raise ValidationError("Email is already in use.")
+        return value
+
+    def validate_phone_number(self, value):
+        # Check if the phone number already exists in the database
+        if self.instance:
+            # If updating, exclude the current user from the check
+            user = CustomUser.objects.filter(phone_number=value).exclude(id=self.instance.id).first()
+            if user:
+                if not user.is_active:
+                    raise ValidationError("Your account is disabled. Please contact the administrator.")
+                raise ValidationError("Phone number is already in use.")
+        else:
+            # If creating, just check for existence
+            if CustomUser.objects.filter(phone_number=value).exists():
+                raise ValidationError("Phone number is already in use.")
+        return value
+
     def create(self, validated_data):
         with transaction.atomic():
             user = CustomUser.objects.create_user(role=Roles.STUDENT, **validated_data)
             Student.objects.create(user=user)
             return user
+
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            if attr in ['full_name', 'email', 'phone_number']:
+                setattr(instance, attr, value)
+        instance.save()
+        return instance

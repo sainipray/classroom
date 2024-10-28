@@ -77,8 +77,8 @@ class CoursePriceUpdateSerializer(serializers.ModelSerializer):
         expiry_date = data.get('expiry_date', None)
 
         if price is not None and discount is not None:
-            if discount < 0 or discount > 100:
-                raise serializers.ValidationError("Discount must be between 0 and 100.")
+            if discount < 0:
+                raise serializers.ValidationError("Discount must be greater than or equal to 0")
             if price < 0:
                 raise serializers.ValidationError("Price must be a positive value.")
 
@@ -102,7 +102,7 @@ class CoursePriceUpdateSerializer(serializers.ModelSerializer):
 
         # Recalculate effective price based on price and discount
         if price is not None and discount is not None:
-            effective_price = price - (price * (discount / 100))
+            effective_price = discount
         else:
             effective_price = price
 

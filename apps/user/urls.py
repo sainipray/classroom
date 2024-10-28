@@ -9,12 +9,12 @@ from .views import (
     LoginAPIView,
     PhoneOTPVerifyAPIView,
     RegisterAPIView,
-    UserProfileAPIView, UserCreateListView, StudentViewSet,
+    UserProfileAPIView, StudentViewSet, UserViewSet,
 )
 
 router = DefaultRouter()
 router.register(r'students', StudentViewSet)
-
+router.register(r'users', UserViewSet, basename='user-modification')
 
 student_router = DefaultRouter()
 student_router.register(r'my-profile', StudentProfileViewSet)
@@ -25,7 +25,6 @@ urlpatterns = [
     path("verify-otp/", PhoneOTPVerifyAPIView.as_view(), name="verify_otp"),
     path("login/", LoginAPIView.as_view(), name="login"),
     path("profile/", UserProfileAPIView.as_view(), name="profile"),
-    path('users/', UserCreateListView.as_view(), name='user-list-create'),
 
     # path('users/<int:pk>/', UserUpdateView.as_view(), name='user-update'),
 ]
