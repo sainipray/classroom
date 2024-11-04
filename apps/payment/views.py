@@ -1,13 +1,18 @@
 import logging
+import tempfile
 from decimal import Decimal
 
 from django.conf import settings
 from django.db import transaction as db_transaction
+from django.http import HttpResponse
+from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from weasyprint import HTML
 
 from abstract.views import ReadOnlyCustomResponseMixin
 from apps.batch.models import BatchPurchaseOrder, Batch, Enrollment
@@ -49,6 +54,22 @@ def final_price_with_other_expenses_and_gst(original_price, discounted_price=Non
 class TransactionViewSet(ReadOnlyCustomResponseMixin):
     queryset = Transaction.objects.all()
     serializer_class = TransactionSerializer
+
+    @action(detail=True, methods=['get'], url_path='download-pdf')
+    def download_pdf(self, request, pk=None):
+        transaction = self.get_object()
+        # Render the HTML template with context data
+        html_string = render_to_string('invoice/invoice.html', {'transaction': transaction})
+
+        # Create a temporary file for the PDF
+        with tempfile.NamedTemporaryFile(suffix=".pdf") as temp_pdf:
+            HTML(string=html_string).write_pdf(temp_pdf.name)
+
+            # Read the PDF and return it as an HTTP response
+            with open(temp_pdf.name, 'rb') as pdf:
+                response = HttpResponse(pdf.read(), content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="transaction_{transaction.id}.pdf"'
+                return response
 
 
 class GetCoursePricingView(APIView):

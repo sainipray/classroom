@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        @page {
+            margin: 30px; /* Adjust this value as needed */
+        }
+
+        body {
+            background-color: #ffffff;
+        }
+
+        .header-right img {
+            width: 280px;
+        }
+
+        .invoice-container {
+            /* max-width: 900px; */
+            background: #fff;
+            padding: 30px;
+            /* border-radius: 8px; */
+            /* box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1); */
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .invoice-header h2 {
+            color: #5a60e2;
+            font-size: 28px;
+            font-weight: 500;
+        }
+
+        .invoice-header p {
+            font-size: 14px;
+            color: #898989;
+            margin-top: 10px;
+            font-weight: 500;
+        }
+
+        .invoice-header span {
+            font-weight: bold;
+            color: #333;
+            margin-left: 10px;
+        }
+
+        .address-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .billed-by, .billed-to {
+            width: 50%;
+            background-color: #efebf8;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .billed-by h4, .billed-to h4 {
+            font-size: 18px;
+            color: #5a60e2;
+            margin-bottom: 10px;
+            font-weight: 400;
+            font-size: 20px;
+        }
+
+        .billed-by h5, .billed-to h5 {
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-weight: 400;
+            font-size: 16px;
+        }
+
+        .billed-by p, .billed-to p {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .invoice-table thead {
+            background-color: #6539c0;
+            color: white;
+        }
+
+        .invoice-table th, .invoice-table td {
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .invoice-table tbody tr:nth-child(even) {
+            background-color: #efebf8;
+        }
+
+        /* .summary-section {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+
+        .totals p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #333;
+        } */
+        .summary-section {
+            page-break-inside: avoid; /* Avoid splitting this section across pages */
+            /* page-break-before: always;  */
+            margin-top: 20px;
+        }
+
+        .total-in-words p {
+            font-size: 16px;
+            color: #1f1d36;
+            margin: 30px 0;
+            text-align: left;
+        }
+
+        .total-in-words p span {
+            text-transform: uppercase;
+        }
+
+        .details-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .bank-details {
+            background-color: #efebf8;
+            padding: 15px;
+            border-radius: 8px;
+            width: 50%;
+            margin-right: 20px;
+        }
+
+        .bank-details h3 {
+            font-size: 18px;
+            color: #6539c0;
+            margin-bottom: 10px;
+        }
+
+        .bank-details p {
+            font-size: 14px;
+            color: #1f1d36;
+            margin: 15px 0;
+        }
+
+        .bank-details p strong {
+            font-weight: bold;
+            color: #1f1d36;
+        }
+
+        .amount-summary {
+            width: 40%;
+            text-align: right;
+        }
+
+        .amount-summary > p {
+            font-size: 16px;
+            color: #1f1d36;
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+        }
+
+        .amount-summary p span {
+            font-weight: bold;
+            color: #1f1d36;
+        }
+
+        .total-line {
+            margin-top: 10px;
+            padding: 10px 0;
+            border-top: 1px solid #1f1d36;
+            border-bottom: 1px solid #1f1d36;
+        }
+
+        .total-line p {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f1d36;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-top: 20px;
+        }
+
+    </style>
+</head>
+<body>
+<!-- <div class="invoice-container"> -->
+<header class="invoice-header">
+    <div class="header-left">
+        <h2>Invoice</h2>
+        <p>Invoice No # <span>2024-25/0005</span></p>
+        <p>Invoice Date <span>Oct 16, 2024</span></p>
+    </div>
+    <div class="header-right">
+        <img src="logo.png" alt="Orbit Infosoft Logo">
+    </div>
+</header>
+
+<section class="address-section">
+    <div class="billed-by">
+        <h4>Billed By</h4>
+        <h5>BALUJA CLASSES</h5>
+        <p>F-118, Cine Star Complex, Vidhyadhar Nagar, Jaipur,
+            Rajasthan, India - 302039</p>
+        <p>GSTIN: 08AAE**345K***</p>
+        <p>PAN: AAE***45K</p>
+        <p>Email: info@orbitinfotech.com</p>
+        <p>Phone: +91 80587 47835</p>
+    </div>
+    <div class="billed-to">
+        <h4>Billed To</h4>
+        <h5>Govind Saini</h5>
+        <p>Shop No-B-51, Alankar Plaza, Jaipur,<br>
+            Rajasthan, India - 302039</p>
+        <p>Email: info@orbitinfotech.com</p>
+        <p>Phone: +91 80587 47835</p>
+    </div>
+</section>
+
+<table class="invoice-table">
+    <thead>
+    <tr>
+        <th>Item</th>
+        <th>GST Rate</th>
+        <th>Quantity</th>
+        <th>Rate</th>
+        <th>Amount</th>
+        <th>Total</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>1. {{ transaction.content_type }} - {{ transaction.content_name }}</td>
+        <td>{{ transaction.gst_percentage }}%</td>
+        <td>1</td>
+        <td>₹{{ transaction.original_price }}</td>
+        <td>₹{{ transaction.original_price }}</td>
+        <td>₹{{ transaction.original_price }}</td>
+    </tr>
+
+    <!-- Repeat for each item -->
+    </tbody>
+</table>
+<section class="summary-section">
+    <div class="total-in-words">
+        <p>Total (in words) : <span>TWENTY NINE THOUSAND RUPEES ONLY</span></p>
+    </div>
+    <div class="details-container">
+        <div class="bank-details">
+            <h3>Bank Details</h3>
+            <p><strong>Account Name:</strong> Baluja Classes</p>
+            <p><strong>Account Number:</strong> 5020009***7290</p>
+            <p><strong>IFSC:</strong> HDFC0000348</p>
+            <p><strong>SWIFT Code:</strong> HDFCINBBXXX</p>
+            <p><strong>Bank:</strong> HDFC BANK PVT LTD</p>
+        </div>
+        <div class="amount-summary">
+            <p>Amount <span>₹{{ transaction.after_discount_price }}</span></p>
+            {% if transaction.coupon %}
+            <p>Coupon <span>₹{{ transaction.coupon.name }}</span></p>
+            {% endif %}
+            <p>Platform Fees <span>₹{{ transaction.platform_fees}} </span></p>
+            <p>Internet Charges <span>₹{{ transaction.internet_charges}} </span></p>
+            <p>Total Amount Before GST <span>₹{{ transaction.total_price_before_gst }} </span></p>
+            <p>GST: <span>{{ transaction.gst_calculation }}%</span></p>
+            <div class="total-line">
+                <p><strong>Total (INR)</strong> <span><strong>₹{{ transaction.total_amount }}</strong></span></p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- <section class="summary-section">
+    <div class="totals">
+        <p>Total (in words): TWENTY NINE THOUSAND RUPEES ONLY</p>
+        <p>Amount: ₹24,576.27</p>
+        <p>CGST: ₹2,211.86</p>
+        <p>SGST: ₹2,211.86</p>
+        <p>Total (INR): ₹29,000.00</p>
+    </div>
+</section> -->
+
+<footer class="footer">
+    <p>Powered By Baluja Classes</p>
+    <p>This is an electronically generated document, no signature is required.</p>
+</footer>
+
+<!-- </div> -->
+</body>
+</html>

@@ -3,10 +3,10 @@ from datetime import timedelta
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.batch.models import Batch, Subject, Folder, File
+from apps.batch.models import Batch, Subject, Folder, File, OfflineClass
 from apps.batch.serializers.fee_serializers import FeeStructureSerializer
 from apps.batch.serializers.liveclass_serializers import LiveClassSerializer
-from apps.batch.serializers.offline_classes_serializers import OfflineClassSerializer
+from apps.batch.serializers.offline_classes_serializers import OfflineClassSerializer, RetrieveOfflineClassSerializer
 from apps.user.serializers import CustomUserSerializer
 
 
@@ -54,8 +54,53 @@ class RetrieveBatchSerializer(serializers.ModelSerializer):
         return LiveClassSerializer(filtered_live_classes, many=True).data
 
     def get_offline_classes(self, obj):
+        # Get the current date
+        current_date = timezone.now().date()
+
+        # Fetch all related offline classes
         data = obj.offline_classes.all()
-        return OfflineClassSerializer(data, many=True).data
+
+        # Filter and extend classes based on type
+        result = []
+        for offline_class in data:
+            if offline_class.class_type == OfflineClass.ClassType.REGULAR:
+                # Add schedules for the next 7 days
+                for i in range(7):
+                    next_day = current_date + timedelta(days=i)
+                    # Filter time slots for the specific day
+                    time_slots = offline_class.time_slots.filter(
+                        day=next_day.strftime("%a"))  # Match the day's short name
+
+                    # Append filtered time slots with schedules
+                    for time_slot in time_slots:
+                        result.append({
+                            'class': RetrieveOfflineClassSerializer(offline_class).data,
+                            'time_slot': time_slot.day,
+                            'schedules': [
+                                {
+                                    'start_time': schedule.start_time,
+                                    'end_time': schedule.end_time
+                                }
+                                for schedule in time_slot.schedules.all()
+                            ]
+                        })
+            elif offline_class.class_type == OfflineClass.ClassType.ONE_TIME:
+                # Add only one instance for one-time classes
+                time_slots = offline_class.time_slots.all()
+                for time_slot in time_slots:
+                    result.append({
+                        'class': RetrieveOfflineClassSerializer(offline_class).data,
+                        'time_slot': time_slot.day,
+                        'schedules': [
+                            {
+                                'start_time': schedule.start_time,
+                                'end_time': schedule.end_time
+                            }
+                            for schedule in time_slot.schedules.all()
+                        ]
+                    })
+
+        return result
 
     class Meta:
         model = Batch

@@ -95,6 +95,16 @@ class OfflineClassSerializer(serializers.ModelSerializer):
         return instance
 
 
+class RetrieveOfflineClassSerializer(serializers.ModelSerializer):
+    time_slots = TimeSlotSerializer(many=True)
+    batch = serializers.ReadOnlyField(source='batch.name')
+    faculty = serializers.ReadOnlyField(source='faculty.full_name')
+
+    class Meta:
+        model = OfflineClass
+        fields = '__all__'
+
+
 class JoinBatchSerializer(serializers.Serializer):
     batch = serializers.IntegerField()
 
