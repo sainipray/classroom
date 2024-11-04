@@ -47,7 +47,7 @@ class OfflineClassSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OfflineClass
-        fields = ['id', 'class_type', 'faculty', 'time_slots']
+        fields = '__all__'
 
     def create(self, validated_data):
         time_slots_data = validated_data.pop('time_slots')

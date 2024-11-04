@@ -141,8 +141,16 @@ class EnrollmentViewSet(CustomResponseMixin):
         return Response({"enrollments": [enrollment.id for enrollment in enrollments]}, status=status.HTTP_201_CREATED)
 
     def destroy(self, request, *args, **kwargs):
+        # TODO student still can see batch because we are checking batch from BatchOrder table, so if any use
+        # student purchased they can see batch still
         enrollment = self.get_object()
-        enrollment.delete()
+        purchased_batches = BatchPurchaseOrder.objects.filter(transaction__user=enrollment.student).values_list(
+            'batch_id', flat=True)
+        if enrollment.batch_id not in purchased_batches:
+            enrollment.delete()
+        else:
+            enrollment.is_approved = False
+            enrollment.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['post'], url_path='add-student')
@@ -270,6 +278,16 @@ class CreateLiveClassView(APIView):
             # Serialize the created class (assuming you have a serializer for this)
         retrieve_serializer = RetrieveLiveClassSerializer(instance=live_class)
         return Response(retrieve_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class CreateOfflineClassView(APIView):
+    def post(self, request):
+        serializer = OfflineClassSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Extract validated data
+        validated_data = serializer.validated_data
+        batch = validated_data['batch']
 
 
 class FeeStructureViewSet(CustomResponseMixin):
@@ -441,9 +459,15 @@ class FolderFileViewSet(viewsets.ViewSet):
         return Response({'status': 'Lock status toggled', 'is_locked': file.is_locked}, status=status.HTTP_200_OK)
 
 
-class OfflineClassViewSet(viewsets.ModelViewSet):
+class OfflineClassViewSet(CustomResponseMixin):
     queryset = OfflineClass.objects.all()
     serializer_class = OfflineClassSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response({"message": "Successfully Created offline classes."}, status=status.HTTP_201_CREATED)
 
 
 class StudentJoinBatchView(APIView):

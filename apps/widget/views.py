@@ -3,8 +3,8 @@ from django.utils import timezone
 from rest_framework import views, status
 from rest_framework.response import Response
 
-from apps.batch.models import Batch, BatchPurchaseOrder
-from apps.course.models import Course
+from apps.batch.models import Batch, BatchPurchaseOrder, Enrollment
+from apps.course.models import Course, CoursePurchaseOrder
 from apps.course.serializers import ListCourseSerializer
 from apps.user.models import CustomUser, Roles  # Adjust the import based on your project structure
 
@@ -100,5 +100,69 @@ class FeesMetricsView(views.APIView):
             'total_paid_fees': total_paid_fees,
             'total_outstanding_fees': total_outstanding_fees,
             'total_records': total_records
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+class StudentDashBoardMetricView(views.APIView):
+
+    def get(self, request):
+        # Available Batches
+        enrolled_batch_ids = Enrollment.objects.filter(student=self.request.user, is_approved=True).values_list(
+            'batch_id', flat=True)
+
+        # Retrieve BatchPurchaseOrder IDs associated with the authenticated user
+        purchased_batch_ids = BatchPurchaseOrder.objects.filter(transaction__user=self.request.user).values_list(
+            'batch_id', flat=True)
+
+        # Fetch batches that are published and exclude both enrolled and purchased batches
+        available_batches = Batch.objects.filter(
+            is_published=True  # Ensure this field is present in your Batch model
+        ).exclude(
+            id__in=enrolled_batch_ids  # Exclude batches the user is already enrolled in
+        ).exclude(
+            id__in=purchased_batch_ids  # Exclude purchased batches if necessary
+        ).count()
+
+        # available Course
+        purchased_course_ids = CoursePurchaseOrder.objects.filter(
+            student=self.request.user
+        ).values_list('course_id', flat=True)
+
+        # Fetch courses that are published and not in the purchased_course_ids
+        available_courses = Course.objects.filter(
+            is_published=True
+        ).exclude(
+            id__in=purchased_course_ids
+        ).count()
+
+        # Enrolled Course
+        enrolled_courses = Course.objects.filter(
+            id__in=CoursePurchaseOrder.objects.filter(
+                student=self.request.user
+            ).values_list('course_id', flat=True)
+        ).filter(is_published=True).count()
+
+        # Enrolled Batched
+        enrolled_batches = Enrollment.objects.filter(student=self.request.user, is_approved=True).values_list(
+            'batch_id', flat=True)
+
+        # Retrieve batch IDs for purchased batches for the authenticated user
+        purchased_batches = BatchPurchaseOrder.objects.filter(transaction__user=self.request.user).values_list(
+            'batch_id', flat=True)
+
+        # Combine both lists of batch IDs into a single set
+        combined_batch_ids = set(enrolled_batches) | set(purchased_batches)  # Use set to avoid duplicates
+
+        # Return Batch objects corresponding to the combined batch IDs
+        enrolled_batches = Batch.objects.filter(
+            id__in=combined_batch_ids
+        ).select_related('created_by').filter(is_published=True).count()  # Ensure the batches are published
+
+        response_data = {
+            'available_batches': available_batches,
+            'available_courses': available_courses,
+            'enrolled_courses': enrolled_courses,
+            'enrolled_batches': enrolled_batches,
         }
         return Response(response_data, status=status.HTTP_200_OK)

@@ -92,9 +92,16 @@ class CustomUserSerializer(serializers.ModelSerializer):
         fields = ['id', 'full_name', 'email', 'phone_number', 'role', 'is_active', 'date_joined']
 
     def validate_phone_number(self, value):
-        """Check if the phone number already exists."""
-        if CustomUser.objects.filter(phone_number=value).exists():
-            raise ValidationError("A user with this phone number already exists.")
+        # Check if the phone number already exists in the database
+        if self.instance:
+            # If updating, exclude the current user from the check
+            user = CustomUser.objects.filter(phone_number=value).exclude(id=self.instance.id).first()
+            if user:
+                raise ValidationError("Phone number is already in use.")
+        else:
+            # If creating, just check for existence
+            if CustomUser.objects.filter(phone_number=value).exists():
+                raise ValidationError("Phone number is already in use.")
         return value
 
     def create(self, validated_data):

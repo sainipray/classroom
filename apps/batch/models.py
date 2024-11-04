@@ -75,23 +75,30 @@ class Batch(TimeStampedModel):
     def __str__(self):
         return self.name
 
+    def is_joining_request_sent(self, user):
+        return Enrollment.objects.filter(student=user, batch=self, is_approved=False).exists()
+
     @property
     def total_enrolled_students(self):
         return self.enrollments.filter(is_approved=True).count()
 
     @property
     def enrolled_students(self):
-        return [{'id': enroll.student.id,
-                 'full_name': enroll.student.full_name,
-                 'phone_number': enroll.student.phone_number.as_e164}
-                for enroll in self.enrollments.filter(is_approved=True)]
+        return [{
+            'id': enroll.id,
+            'student_id': enroll.student.id,
+            'full_name': enroll.student.full_name,
+            'phone_number': enroll.student.phone_number.as_e164}
+            for enroll in self.enrollments.filter(is_approved=True)]
 
     @property
     def student_join_request(self):
-        return [{'id': enroll.id,
-                 'full_name': enroll.student.full_name,
-                 'phone_number': enroll.student.phone_number.as_e164} for enroll in
-                self.enrollments.filter(is_approved=False)]
+        return [{
+            'id': enroll.id,
+            'student_id': enroll.student.id,
+            'full_name': enroll.student.full_name,
+            'phone_number': enroll.student.phone_number.as_e164} for enroll in
+            self.enrollments.filter(is_approved=False)]
 
     def get_installment_details_for_user(self, user):
         """
@@ -288,6 +295,8 @@ class OfflineClass(TimeStampedModel):
         default=ClassType.REGULAR,
         verbose_name='Class Type'
     )
+    # TODO remove null true and blank true
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, null=True, blank=True, related_name='offline_classes')
     faculty = models.ForeignKey(
         User,
         on_delete=models.CASCADE,

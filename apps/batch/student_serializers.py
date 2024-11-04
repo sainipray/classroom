@@ -10,10 +10,19 @@ class StudentBatchSerializer(serializers.ModelSerializer):
     subject = serializers.ReadOnlyField(source='subject.name')
     installment_details = serializers.SerializerMethodField()
 
+    is_joining_request_sent = serializers.SerializerMethodField()
+
+
+    def get_is_joining_request_sent(self, obj):
+        request = self.context.get('request')
+        if request:
+            user = request.user
+            return obj.is_joining_request_sent(user)
+
     class Meta:
         model = Batch
         fields = ['id', 'name', 'batch_code', 'start_date', 'subject', 'live_class_link',
-                  'created_by', 'fee_structure', 'installment_details', 'thumbnail']
+                  'created_by', 'fee_structure', 'installment_details', 'thumbnail', 'is_joining_request_sent']
 
     def get_installment_details(self, obj):
         request = self.context.get('request')
@@ -35,7 +44,6 @@ class StudentLiveClassSerializer(serializers.ModelSerializer):
 class StudentRetrieveBatchSerializer(StudentBatchSerializer):
     content = serializers.ReadOnlyField()
 
-    # live_classes = StudentLiveClassSerializer(read_only=True, many=True)
 
     class Meta:
         model = Batch
@@ -44,6 +52,7 @@ class StudentRetrieveBatchSerializer(StudentBatchSerializer):
 
 class StudentAttendanceSerializer(serializers.ModelSerializer):
     live_class = serializers.ReadOnlyField(source='live_class.title')
+
     class Meta:
         model = Attendance
         fields = '__all__'
