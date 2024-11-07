@@ -4,6 +4,7 @@ from rest_framework import views, status
 from rest_framework.response import Response
 
 from apps.batch.models import Batch, BatchPurchaseOrder, Enrollment
+from apps.batch.serializers.batch_serializers import ListBatchSerializer
 from apps.course.models import Course, CoursePurchaseOrder
 from apps.course.serializers import ListCourseSerializer
 from apps.user.models import CustomUser, Roles  # Adjust the import based on your project structure
@@ -18,14 +19,14 @@ class UserMetricsView(views.APIView):
         new_enrollments_last_week = CustomUser.objects.exclude(role=Roles.STUDENT).filter(
             date_joined__gte=timezone.now() - timezone.timedelta(days=7)
         ).count()
-        total_instructor = CustomUser.objects.filter(role=Roles.INSTRUCTOR).count()
+        inactive_users = CustomUser.objects.exclude(role=Roles.STUDENT).filter(is_active=False).count()
 
         # Prepare the response data
         response_data = {
             "total_users": total_users,
             "active_users": active_users,
             "new_enrollments_last_week": new_enrollments_last_week,
-            "total_instructor": total_instructor,
+            "inactive_users": inactive_users,
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
@@ -67,13 +68,22 @@ class GlobalMetricsView(views.APIView):
             .annotate(purchase_count=Count('coursepurchaseorder'))  # Count purchases
             .order_by('-purchase_count', '-created')[:6]  # Order by purchase count and then created date
         )
-        serializer = ListCourseSerializer(trending_courses, many=True)
+        trending_batches = (
+            Batch.objects.filter(is_published=True)  # Filter published courses
+            .annotate(purchase_count=Count('purchase_orders'))  # Count purchases
+            .order_by('-purchase_count', '-created')[:6]  # Order by purchase count and then created date
+        )
+        total_instructor = CustomUser.objects.filter(role=Roles.INSTRUCTOR).count()
+        courses_serializer = ListCourseSerializer(trending_courses, many=True)
+        batches_serializer = ListBatchSerializer(trending_batches, many=True)
         # Prepare the response data
         response_data = {
             "total_students": total_students,
             "total_courses": total_courses,
             "total_batches": total_batches,
-            'trending_courses': serializer.data,
+            'total_instructor': total_instructor,
+            'trending_courses': courses_serializer.data,
+            'trending_batches': batches_serializer.data,
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
