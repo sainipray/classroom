@@ -47,7 +47,7 @@ class CustomUserManager(BaseUserManager):
 
 class Roles(models.TextChoices):
     STUDENT = "STUDENT", "Student"
-    TEACHER = "TEACHER", "Teacher"
+    MANAGER = "MANAGER", "Manager"
     ADMIN = "ADMIN", "Admin"
     INSTRUCTOR = "INSTRUCTOR", "Instructor"
 
@@ -157,8 +157,8 @@ class Instructor(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='instructor', null=True, blank=True)
 
 
-class Teacher(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='teacher')
+class Manager(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='Manager')
 
 
 class DeviceSession(models.Model):

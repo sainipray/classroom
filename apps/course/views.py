@@ -8,13 +8,23 @@ from rest_framework.viewsets import ModelViewSet
 from abstract.views import CustomResponseMixin
 from .models import Category, Subcategory, Course, Folder, File
 from .serializers import CategorySerializer, SubcategorySerializer, CourseSerializer, CoursePriceUpdateSerializer, \
-    ListCourseSerializer, FolderSerializer, FileSerializer
+    ListCourseSerializer, FolderSerializer, FileSerializer, ListSubcategorySerializer
 from ..utils.functions import merge_and_sort_items
 
 
 class CategoryViewSet(ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+
+    # def destroy(self, request, *args, **kwargs):
+    #     category = self.get_object()
+    #
+    #     # Run validation by instantiating the serializer with the instance and request context
+    #     serializer = self.get_serializer(category, data={}, context={'request': request})
+    #     serializer.is_valid(raise_exception=True)
+    #
+    #     # Proceed with deletion if validation passed
+    #     return super().destroy(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         # Extract category data from the request
@@ -40,9 +50,10 @@ class CategoryViewSet(ModelViewSet):
         return Response({'message': "Category Created successfully"}, status=status.HTTP_201_CREATED)
 
 
-class SubcategoryViewSet(ModelViewSet):
+class SubcategoryViewSet(CustomResponseMixin):
     queryset = Subcategory.objects.all()
     serializer_class = SubcategorySerializer
+    list_serializer_class = ListSubcategorySerializer
     filter_backends = (DjangoFilterBackend,)
     filterset_fields = ['category']
 
@@ -153,6 +164,7 @@ class FolderFileViewSet(viewsets.ViewSet):
     A ViewSet to handle operations related to Folders and Files within a Course.
     """
     queryset = Course.objects.all()
+
     # Helper method to get the course
     def get_course(self, pk):
         return get_object_or_404(Course, pk=pk)

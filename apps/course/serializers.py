@@ -8,6 +8,16 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ["id", "title", "description", "status", "created", "modified"]
 
+    # def validate(self, data):
+    #     # Check if we are performing a delete operation
+    #     request = self.context.get('request')
+    #     if request and request.method == 'DELETE':
+    #         # Get the category instance
+    #         category = self.instance
+    #         if Course.objects.filter(category=category).exists():
+    #             raise serializers.ValidationError(
+    #                 "Cannot delete this category as it is associated with one or more courses.")
+    #     return data
 
 class SubcategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,6 +31,10 @@ class SubcategorySerializer(serializers.ModelSerializer):
             "created",
             "modified",
         ]
+
+
+class ListSubcategorySerializer(SubcategorySerializer):
+    category = CategorySerializer(read_only=True)
 
 
 class CategorySubCategorySerializer(serializers.ModelSerializer):
@@ -131,5 +145,3 @@ class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
         fields = ['id', 'title', 'folder', 'url', 'created', 'is_locked']
-
-

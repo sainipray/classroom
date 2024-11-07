@@ -84,7 +84,7 @@ class MeritHubAPI:
 
     # Classes
     def schedule_class(self, user_id, class_data, batch):
-        """Schedule a class for the teacher."""
+        """Schedule a class for the Instructor."""
         user = User.objects.get(id=user_id)
         if not user.merit_user_id:
             response = self.create_user({
@@ -195,7 +195,7 @@ class MeritHubAPI:
 # user_data = {"name": "John Doe", "email": "john@example.com"}
 # api.create_user(user_data)
 # class_data = {"name": "Math Class", "start_time": "2024-09-20T15:00:00Z", "duration": 60}
-# api.schedule_class(user_id="teacher_id", class_data=class_data)
+# api.schedule_class(user_id="Manager_id", class_data=class_data)
 # api.add_students_to_class(class_id="class_id", users=["student1_id", "student2_id"])
 # api.remove_users_from_class(class_id="class_id", users=["student1_id"])
 # api.delete_class(class_id="class_id")

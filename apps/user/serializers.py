@@ -4,7 +4,7 @@ from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
 
 from config.sms.otp import OTPManager
-from .models import CustomUser, Teacher, Instructor, Roles
+from .models import CustomUser, Manager, Instructor, Roles
 from .models import Student
 
 
@@ -110,9 +110,9 @@ class CustomUserSerializer(serializers.ModelSerializer):
         user = CustomUser.objects.create(**validated_data, role=role)
 
         # Create the corresponding role model based on the user's role
-        if role == 'TEACHER':
-            Teacher.objects.create(user=user)
-        elif role == 'INSTRUCTOR':
+        if role == Roles.MANAGER:
+            Manager.objects.create(user=user)
+        elif role == Roles.INSTRUCTOR:
             Instructor.objects.create(user=user)
         # Admin role doesn't require a separate model, so no need to create anything for admin
         return user
