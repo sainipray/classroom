@@ -2,17 +2,18 @@
 
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, status, viewsets, mixins
+from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from abstract.views import CustomResponseMixin
 from config.sms.textlocal import LOGIN_OTP_KEY, SIGNUP_OTP_KEY, SMSManager
-from .models import CustomUser, Roles
+from .models import CustomUser, Roles, ModulePermission, Module
 from .schema_definitions import (
     login_api_view,
     phone_otp_verify_api_view,
@@ -166,3 +167,125 @@ class StudentViewSet(viewsets.ModelViewSet):
 
         status_message = "activated" if student.is_active else "deactivated"
         return Response({"message": f"Student account has been {status_message}."}, status=status.HTTP_200_OK)
+
+
+class PermissionView(APIView):
+
+    def get(self, request):
+        # Get the role of the currently authenticated user
+        user_role = request.user.role  # Assuming 'role' is a field in the user model
+
+        # Retrieve all modules
+        modules = Module.objects.all()
+
+        # Default permissions for certain roles
+        if user_role == Roles.ADMIN:
+            # ADMIN role has full permissions for all modules
+            permissions_data = [{
+                'module': module.name,
+                'view': True,
+                'create': True,
+                'edit': True,
+                'delete': True
+            } for module in modules]
+            return Response(permissions_data)
+
+        elif user_role == Roles.STUDENT:
+            # STUDENT role has no permissions for any module
+            permissions_data = [{
+                'module': module.name,
+                'view': False,
+                'create': False,
+                'edit': False,
+                'delete': False
+            } for module in modules]
+            return Response(permissions_data)
+
+        # For roles like MANAGER or INSTRUCTOR, fetch permissions from the database
+        permissions = ModulePermission.objects.filter(role=user_role)
+
+        # Create a dictionary to map modules to permissions
+        permission_dict = {perm.module.name: perm for perm in permissions}
+
+        # Prepare the response data for all modules
+        permissions_data = []
+
+        for module in modules:
+            # Get permissions for this module, or set default if no permission exists for the role
+            perm = permission_dict.get(module.name)
+
+            if perm:
+                permissions_data.append({
+                    'module': module.name,
+                    'view': perm.can_view,
+                    'create': perm.can_create,
+                    'edit': perm.can_edit,
+                    'delete': perm.can_delete
+                })
+            else:
+                # If no permission is found for the role, default to no permissions
+                permissions_data.append({
+                    'module': module.name,
+                    'view': False,
+                    'create': False,
+                    'edit': False,
+                    'delete': False
+                })
+
+        return Response(permissions_data)
+
+
+class PermissionsForRoles(APIView):
+
+    def get(self, request):
+        # Get permissions for Manager and Instructor
+        roles = [Roles.MANAGER, Roles.INSTRUCTOR]  # We can extend this to include other roles if needed
+
+        permissions_data = {}
+
+        for role in roles:
+            permissions = ModulePermission.objects.filter(
+                role=role)  # Assuming 'role' is the related field in ModulePermission
+
+            permissions_data[role] = []
+            for perm in permissions:
+                permissions_data[role].append({
+                    'module': perm.module.name,  # Assuming 'module' has a 'name' field
+                    'view': perm.can_view,
+                    'create': perm.can_create,
+                    'edit': perm.can_edit,
+                    'delete': perm.can_delete
+                })
+
+        return Response(permissions_data)
+
+    def post(self, request):
+        """
+        Save permissions for Manager and Instructor roles
+        """
+        data = request.data
+        roles = [Roles.MANAGER, Roles.INSTRUCTOR]
+
+        # Iterate through each role and update the permissions
+        for role in roles:
+            if role not in data:
+                raise ValidationError(f"Missing data for role: {role}")
+
+            for perm_data in data[role]:
+                module_name = perm_data.get('module')
+                try:
+                    module_permission = ModulePermission.objects.get(role=role, module__name=module_name)
+                except ModulePermission.DoesNotExist:
+                    # If the permission does not exist, create a new one
+                    module_permission = ModulePermission(role=role, module_name=module_name)
+
+                # Update permission values
+                module_permission.can_view = perm_data.get('view', module_permission.can_view)
+                module_permission.can_create = perm_data.get('create', module_permission.can_create)
+                module_permission.can_edit = perm_data.get('edit', module_permission.can_edit)
+                module_permission.can_delete = perm_data.get('delete', module_permission.can_delete)
+
+                # Save the updated permission object
+                module_permission.save()
+
+        return Response({"message": "Permissions updated successfully."}, status=status.HTTP_200_OK)

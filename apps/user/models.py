@@ -52,6 +52,28 @@ class Roles(models.TextChoices):
     INSTRUCTOR = "INSTRUCTOR", "Instructor"
 
 
+class Module(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class ModulePermission(models.Model):
+    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    role = models.CharField(
+        max_length=50,
+        choices=Roles.choices
+    )
+    can_view = models.BooleanField(default=False)
+    can_create = models.BooleanField(default=False)
+    can_edit = models.BooleanField(default=False)
+    can_delete = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.role} - {self.module.name} Permissions"
+
+
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, verbose_name="Email Address")
     phone_number = PhoneNumberField(
