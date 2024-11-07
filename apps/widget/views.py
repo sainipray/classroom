@@ -18,14 +18,14 @@ class UserMetricsView(views.APIView):
         new_enrollments_last_week = CustomUser.objects.exclude(role=Roles.STUDENT).filter(
             date_joined__gte=timezone.now() - timezone.timedelta(days=7)
         ).count()
-        inactive_users = CustomUser.objects.exclude(role=Roles.STUDENT).filter(is_active=False).count()
+        total_instructor = CustomUser.objects.filter(role=Roles.INSTRUCTOR).count()
 
         # Prepare the response data
         response_data = {
             "total_users": total_users,
             "active_users": active_users,
             "new_enrollments_last_week": new_enrollments_last_week,
-            "inactive_users": inactive_users,
+            "total_instructor": total_instructor,
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
