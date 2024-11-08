@@ -7,8 +7,6 @@ from rest_framework.views import APIView
 
 from config.permissions import IsAdmin
 from .enums import SettingKeys
-from .schema_definitions import settings_response_schema, update_settings_request_schema
-from constance import settings as constance_settings
 
 
 class GetSettingsAPIView(APIView):
