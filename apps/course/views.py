@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -16,15 +17,26 @@ class CategoryViewSet(ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
 
-    # def destroy(self, request, *args, **kwargs):
-    #     category = self.get_object()
-    #
-    #     # Run validation by instantiating the serializer with the instance and request context
-    #     serializer = self.get_serializer(category, data={}, context={'request': request})
-    #     serializer.is_valid(raise_exception=True)
-    #
-    #     # Proceed with deletion if validation passed
-    #     return super().destroy(request, *args, **kwargs)
+    def destroy(self, request, *args, **kwargs):
+        category = self.get_object()
+
+        # Check if the category is being used by any course
+        related_categories = category.course_category_subcategories.all()  # Assuming the related name is 'course_set'
+
+        if related_categories.exists():
+            # Collect the names of courses that use this category
+            course_names = [category.course.name for category in related_categories]
+            course_list = ', '.join(course_names)
+
+            # Return a validation message
+            message = {
+                "detail": f"This category is already used in courses: {course_list}. "
+                          "Please remove these courses first before deleting this category."
+            }
+            raise ValidationError(message)
+
+        # If not used, proceed with the deletion
+        return super().destroy(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         # Extract category data from the request
