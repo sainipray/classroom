@@ -10,7 +10,7 @@ from .enums import SettingKeys
 
 
 class GetSettingsAPIView(APIView):
-    permission_classes = [IsAdmin]  # Only admins can view settings
+    # permission_classes = [IsAdmin]  # Only admins can view settings
 
     # @settings_response_schema
     def get(self, request, *args, **kwargs):
