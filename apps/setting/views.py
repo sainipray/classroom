@@ -19,7 +19,7 @@ class GetSettingsAPIView(APIView):
 
 
 class UpdateSettingsAPIView(APIView):
-    permission_classes = [IsAdmin]  # Only admins can update settings
+    # permission_classes = [IsAdmin]  # Only admins can update settings
 
     # @update_settings_request_schema
     def post(self, request, *args, **kwargs):
