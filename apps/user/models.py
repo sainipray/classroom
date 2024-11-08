@@ -73,6 +73,9 @@ class ModulePermission(models.Model):
     def __str__(self):
         return f"{self.role} - {self.module.name} Permissions"
 
+    class Meta:
+        ordering = ('id',)
+
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True, verbose_name="Email Address")
