@@ -208,6 +208,20 @@ CONSTANCE_CONFIG = {
     "LIVE_CHAT_DOCUMENT_SHARE": (True, "Allow document sharing"),
     "LIVE_CHAT_IMAGE_SHARE": (True, "Allow image sharing"),
     "LIVE_CHAT_AUDIO_SHARE": (True, "Allow audio file sharing"),
+    # Company Information
+    "BILLED_BY": ("", "Company or individual billed by"),
+    "GSTIN": ("", "Company GSTIN number"),
+    "PAN": ("", "Company PAN number"),
+    "EMAIL": ("", "Company contact email"),
+    "PHONE": ("", "Company contact phone number"),
+
+    # Bank Details
+    "ACCOUNT_NAME": ("", "Bank account name"),
+    "ACCOUNT_NUMBER": ("", "Bank account number"),
+    "IFSC": ("", "Bank IFSC code"),
+    "SWIFT_CODE": ("", "Bank SWIFT code"),
+    "BANK": ("", "Bank name"),
+
 }
 DEFAULT_FILE_STORAGE = "config.custom_storages.get_storage_class"
 
