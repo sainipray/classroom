@@ -91,6 +91,9 @@ class Batch(TimeStampedModel):
             'phone_number': enroll.student.phone_number.as_e164}
             for enroll in self.enrollments.filter(is_approved=True)]
 
+    def is_student_enrolled(self, user):
+        return Enrollment.objects.filter(student=user, batch=self, is_approved=True).exists()
+
     @property
     def student_join_request(self):
         return [{
@@ -237,6 +240,8 @@ class Enrollment(TimeStampedModel):
     is_approved = models.BooleanField(default=False, verbose_name="Is Approved")
     approved_by = models.ForeignKey(User, verbose_name="Approved By", on_delete=models.CASCADE, null=True, blank=True)
     batch_joined_date = models.DateTimeField(null=True, blank=True)
+    # If student pay manual, admin can just add in enrollments for batch, student don't need to pay
+    manual_payment_approval = models.BooleanField(default=False, verbose_name="Manual Approval", null=True, blank=True)
 
     class Meta:
         unique_together = ('batch', 'student')
@@ -253,6 +258,8 @@ class Enrollment(TimeStampedModel):
             self.batch_joined_date = timezone.now()  # Set current date and time
 
         super().save(*args, **kwargs)  # Call the parent class's save method
+
+
 
 
 class LiveClass(TimeStampedModel):

@@ -21,6 +21,13 @@ class CustomResponseMixin(viewsets.ModelViewSet):
             return self.list_serializer_class
         return self.serializer_class
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        return Response(data={'message': "Successfully created"}, status=status.HTTP_201_CREATED)
+
+
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
@@ -34,6 +41,7 @@ class CustomResponseMixin(viewsets.ModelViewSet):
             instance._prefetched_objects_cache = {}
 
         return Response(status=status.HTTP_200_OK, data={'message': "Successfully updated"})
+
 
 
 class ReadOnlyCustomResponseMixin(viewsets.ReadOnlyModelViewSet):

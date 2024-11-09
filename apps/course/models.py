@@ -3,7 +3,6 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django_extensions.db.models import TimeStampedModel, TitleSlugDescriptionModel, ActivatorModel
 
-from apps.coupon.models import Coupon
 from apps.user.models import Student
 
 User = get_user_model()
@@ -82,6 +81,9 @@ class Course(TimeStampedModel):
     class Meta:
         ordering = ('-created',)
 
+    def is_student_enrolled(self, user):
+        return CoursePurchaseOrder.objects.filter(student=user, course=self).exists()
+
     @property
     def content(self):
         # Define the file extensions for videos and images
@@ -146,6 +148,7 @@ class Course(TimeStampedModel):
         }
 
         return data
+
     @property
     def categories_info(self):
         categories_data = []
@@ -244,6 +247,7 @@ class Assignment(TimeStampedModel):
         ordering = ['due_date']
         verbose_name = "Assignment"
         verbose_name_plural = "Assignments"
+
     def __str__(self):
         return self.title
 
@@ -309,4 +313,3 @@ class CoursePurchaseOrder(TimeStampedModel):
 
     class Meta:
         ordering = ('-created',)
-

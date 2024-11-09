@@ -226,13 +226,12 @@
 <section class="address-section">
     <div class="billed-by">
         <h4>Billed By</h4>
-        <h5>BALUJA CLASSES</h5>
-        <p>F-118, Cine Star Complex, Vidhyadhar Nagar, Jaipur,
-            Rajasthan, India - 302039</p>
-        <p>GSTIN: 08AAE**345K***</p>
-        <p>PAN: AAE***45K</p>
-        <p>Email: info@orbitinfotech.com</p>
-        <p>Phone: +91 80587 47835</p>
+        <h5>{{ config.BILLED_BY }}</h5>
+        <p>{{ config.COMPANY_ADDRESS }}</p>
+        <p>GSTIN: {{ config.GSTIN }}</p>
+        <p>PAN: {{ config.PAN }}</p>
+        <p>Email: {{ config.EMAIL }}</p>
+        <p>Phone: {{ config.PHONE }}</p>
     </div>
     <div class="billed-to">
         <h4>Billed To</h4>
@@ -275,11 +274,11 @@
     <div class="details-container">
         <div class="bank-details">
             <h3>Bank Details</h3>
-            <p><strong>Account Name:</strong> Baluja Classes</p>
-            <p><strong>Account Number:</strong> 5020009***7290</p>
-            <p><strong>IFSC:</strong> HDFC0000348</p>
-            <p><strong>SWIFT Code:</strong> HDFCINBBXXX</p>
-            <p><strong>Bank:</strong> HDFC BANK PVT LTD</p>
+            <p><strong>Account Name:</strong> {{ config.ACCOUNT_NAME }}</p>
+            <p><strong>Account Number:</strong> {{ config.ACCOUNT_NUMBER }}</p>
+            <p><strong>IFSC:</strong> {{ config.IFSC }}</p>
+            <p><strong>SWIFT Code:</strong> {{ config.SWIFT_CODE }}</p>
+            <p><strong>Bank:</strong> {{ config.BANK }}</p>
         </div>
         <div class="amount-summary">
             <p>Amount <span>₹{{ transaction.after_discount_price }}</span></p>
@@ -297,15 +296,6 @@
     </div>
 </section>
 
-<!-- <section class="summary-section">
-    <div class="totals">
-        <p>Total (in words): TWENTY NINE THOUSAND RUPEES ONLY</p>
-        <p>Amount: ₹24,576.27</p>
-        <p>CGST: ₹2,211.86</p>
-        <p>SGST: ₹2,211.86</p>
-        <p>Total (INR): ₹29,000.00</p>
-    </div>
-</section> -->
 
 <footer class="footer">
     <p>Powered By Baluja Classes</p>

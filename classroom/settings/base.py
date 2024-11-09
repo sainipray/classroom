@@ -56,6 +56,7 @@ PROJECT_APPS = [
     "apps.payment.apps.PaymentConfig",
     "apps.test_series.apps.TestSeriesConfig",
     "apps.free_resource.apps.FreeResourceConfig",
+    "apps.announcement.apps.AnnouncementConfig"
 ]
 
 INSTALLED_APPS += PROJECT_APPS
@@ -84,6 +85,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "constance.context_processors.config"
             ],
         },
     },

@@ -100,9 +100,8 @@ class GetBatchPricingView(APIView):
     API view to get pricing details for a specific batch including GST and additional fees.
     """
 
-    def get(self, request, batch_id):
+    def get(self, request, batch_id, installment_number):
         batch = get_object_or_404(Batch, id=batch_id, is_published=True)  # Ensure to check if the batch is active
-
         # Original price (assuming first installment is stored in a field called `first_installment_price`)
         original_price = batch.fee_structure.fee_amount or 0
 
