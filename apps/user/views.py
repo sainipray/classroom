@@ -127,6 +127,7 @@ class UserViewSet(CustomResponseMixin):
     serializer_class = CustomUserSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('full_name', 'email', 'phone_number')
+    filterset_fields = ['role']
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

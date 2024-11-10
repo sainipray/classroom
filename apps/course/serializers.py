@@ -1,6 +1,9 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Category, Subcategory, Course, CourseCategorySubCategory, Folder, File
+from .models import Category, Subcategory, Course, CourseCategorySubCategory, Folder, File, CourseFaculty
+
+User = get_user_model()
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -18,6 +21,7 @@ class CategorySerializer(serializers.ModelSerializer):
     #             raise serializers.ValidationError(
     #                 "Cannot delete this category as it is associated with one or more courses.")
     #     return data
+
 
 class SubcategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -68,9 +72,24 @@ class CourseSerializer(serializers.ModelSerializer):
         return course
 
 
+class FacultySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'full_name', 'email', ]
+
+
+class CourseFacultySerializer(serializers.ModelSerializer):
+    faculty = FacultySerializer(read_only=True)
+
+    class Meta:
+        model = CourseFaculty
+        fields = ['id', 'faculty', 'course']
+
+
 class ListCourseSerializer(serializers.ModelSerializer):
     categories_subcategories = CategorySubCategorySerializer(many=True)
     created_by = serializers.ReadOnlyField(source='created_by.full_name')
+    faculties = CourseFacultySerializer(source='course_faculties', many=True, read_only=True)
 
     class Meta:
         model = Course

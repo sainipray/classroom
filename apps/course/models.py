@@ -160,6 +160,11 @@ class Course(TimeStampedModel):
         return categories_data
 
 
+class CourseFaculty(TimeStampedModel):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_faculties')
+    faculty = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assign_courses')
+
+
 class AdvancedCourseSettings(TimeStampedModel):
     TAX_CHOICES = [
         (0, '0%'),

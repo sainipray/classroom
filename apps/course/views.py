@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
@@ -7,10 +8,12 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from abstract.views import CustomResponseMixin
-from .models import Category, Subcategory, Course, Folder, File
+from .models import Category, Subcategory, Course, Folder, File, CourseFaculty
 from .serializers import CategorySerializer, SubcategorySerializer, CourseSerializer, CoursePriceUpdateSerializer, \
     ListCourseSerializer, FolderSerializer, FileSerializer, ListSubcategorySerializer
 from ..utils.functions import merge_and_sort_items
+
+User = get_user_model()
 
 
 class CategoryViewSet(ModelViewSet):
@@ -93,6 +96,34 @@ class CourseViewSet(CustomResponseMixin):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return Response({"message": "Course created successfully"}, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'], url_path='manage-faculty')
+    def manage_faculty(self, request, pk=None):
+        """
+        Custom action to add or remove a faculty from a course.
+        Expected data:
+        {
+            "faculty_id": <int>,   # ID of the faculty
+            "action": "add" | "remove"  # Action to perform: add or remove
+        }
+        """
+        course = self.get_object()  # Fetch the course based on `pk`
+        faculty_id = request.data.get('faculty_id')
+        action_type = request.data.get('action')
+
+        if not faculty_id or action_type not in ['add', 'remove']:
+            return Response({"detail": "Invalid data provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        faculty = get_object_or_404(User, pk=faculty_id)
+        message = ""
+        if action_type == 'add':
+            CourseFaculty.objects.get_or_create(course=course, faculty=faculty)
+            message = "Faculty added successfully."
+        elif action_type == 'remove':
+            CourseFaculty.objects.filter(course=course, faculty=faculty).delete()
+            message = "Faculty removed successfully."
+
+        return Response({"detail": message}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['patch'], url_path='update-price')
     def update_price(self, request, pk=None):
