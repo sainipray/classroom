@@ -5,7 +5,7 @@ from .models import FreeResource
 from .student_serializers import StudentFreeResourceSerializer
 
 
-class StudentFreeResourceViewSet(mixins.ListModelMixin,
+class StudentFreeResourceViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
                                  GenericViewSet):
     queryset = FreeResource.objects.all()
     serializer_class = StudentFreeResourceSerializer
