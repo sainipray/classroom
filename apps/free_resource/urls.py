@@ -1,16 +1,16 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from .student_views import StudentVideoViewSet, StudentDocumentViewSet
-from .views import VideoViewSet, DocumentViewSet
+from .student_views import StudentFreeResourceViewSet
+from .views import FreeResourceViewSet, FolderFileViewSet
 
 router = DefaultRouter()
-router.register(r'videos', VideoViewSet, basename='videos')
-router.register(r'documents', DocumentViewSet, basename='documents')
+router.register(r'resources', FreeResourceViewSet, basename='resources')
+router.register(r'content', FolderFileViewSet, basename='course-content')
 
 student_router = DefaultRouter()
-student_router.register(r'student-videos', StudentVideoViewSet, basename='student_videos')
-student_router.register(r'student-documents', StudentDocumentViewSet, basename='student_documents')
+
+student_router.register(r'student-resources', StudentFreeResourceViewSet, basename='student_resources')
 
 urlpatterns = [
     path('', include(router.urls)),
