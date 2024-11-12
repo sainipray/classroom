@@ -10,9 +10,12 @@ class Command(BaseCommand):
         # Define only the modules, no specific permissions in the data
         permissions_data = [
             'Courses', 'Students', 'Fee Record', 'Fee Structure', 'Batches',
-            'Coupons', 'Test Portal', 'Lead & Inquiries', 'Test Series',
+            'Coupons', 'Quiz', 'Lead & Inquiries', 'Products',
             'Transactions', 'Free Resource', 'Team Members', 'Report', 'Settings'
         ]
+
+        # delete all
+        Module.objects.all().delete()
 
         # Create modules if they don't exist
         for module_name in permissions_data:

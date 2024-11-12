@@ -5,7 +5,7 @@ from rest_framework.generics import get_object_or_404
 from .models import Transaction
 from ..batch.models import Batch, BatchPurchaseOrder
 from ..coupon.models import Coupon
-from ..course.models import Course
+from ..course.models import Course, CourseValidityPeriod
 from ..test_series.models import TestSeries
 
 
@@ -28,10 +28,16 @@ class TransactionSerializer(serializers.ModelSerializer):
 class PurchaseCourseSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
     coupon_code = serializers.CharField(max_length=50, required=False, allow_blank=True, allow_null=True)
+    validity_period = serializers.IntegerField(required=False)
 
     def validate_course_id(self, value):
         if not Course.objects.filter(id=value, is_published=True).exists():
             raise serializers.ValidationError("Invalid or unpublished course ID.")
+        return value
+
+    def validate_validity_period(self, value):
+        if not CourseValidityPeriod.objects.filter(id=value).exists():
+            raise serializers.ValidationError("Invalid Course Pricing Validity.")
         return value
 
     def validate_coupon_code(self, value):
@@ -72,7 +78,6 @@ class PurchaseCourseSerializer(serializers.Serializer):
             if coupon.courses.exists() and course not in coupon.courses.all():
                 raise serializers.ValidationError("This coupon is not applicable to the selected course.")
         return attrs
-
 
 
 class ApplyCouponSerializer(serializers.Serializer):

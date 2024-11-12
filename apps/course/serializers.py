@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Category, Subcategory, Course, CourseCategorySubCategory, Folder, File, CourseFaculty
+from .models import Category, Subcategory, Course, CourseCategorySubCategory, Folder, File, CourseFaculty, \
+    CourseValidityPeriod
 
 User = get_user_model()
 
@@ -86,67 +87,72 @@ class CourseFacultySerializer(serializers.ModelSerializer):
         fields = ['id', 'faculty', 'course']
 
 
-class ListCourseSerializer(serializers.ModelSerializer):
-    categories_subcategories = CategorySubCategorySerializer(many=True)
-    created_by = serializers.ReadOnlyField(source='created_by.full_name')
-    faculties = CourseFacultySerializer(source='course_faculties', many=True, read_only=True)
-
+class CourseValidityPeriodSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Course
-        fields = '__all__'
-
-
-class CoursePriceUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Course
-        fields = ['price', 'discount', 'effective_price', 'expiry_date', 'duration_value', 'duration_unit',
-                  'validity_type']
+        model = CourseValidityPeriod
+        fields = ['id', 'duration_value', 'duration_unit', 'price', 'discount', 'effective_price', 'is_promoted']
+        read_only_fields = ['effective_price']
 
     def validate(self, data):
-        price = data.get('price', None)
-        discount = data.get('discount', None)
-        validity_type = data.get('validity_type', None)
-        duration_value = data.get('duration_value', None)
-        expiry_date = data.get('expiry_date', None)
+        price = data.get('price')
+        discount = data.get('discount', 0)
 
-        if price is not None and discount is not None:
-            if discount < 0:
-                raise serializers.ValidationError("Discount must be greater than or equal to 0")
-            if price < 0:
-                raise serializers.ValidationError("Price must be a positive value.")
-
-        # Additional validation based on validity type
-        if validity_type == 'single':
-            if duration_value is None:
-                raise serializers.ValidationError("Duration value is required for single validity.")
-        elif validity_type == 'expiry_date':
-            if expiry_date is None:
-                raise serializers.ValidationError("Expiry date is required for expiry date validity.")
+        if price < 0:
+            raise serializers.ValidationError("Price must be a positive value.")
+        if discount < 0:
+            raise serializers.ValidationError("Discount must be greater than or equal to 0.")
 
         return data
 
+
     def update(self, instance, validated_data):
-        price = validated_data.get('price', instance.price)
-        discount = validated_data.get('discount', instance.discount)
-        validity_type = validated_data.get('validity_type', instance.validity_type)
-        duration_value = validated_data.get('duration_value', instance.duration_value)
-        duration_unit = validated_data.get('duration_unit', instance.duration_unit)
-        expiry_date = validated_data.get('expiry_date', instance.expiry_date)
+        instance.price = validated_data.get('price', instance.price)
+        instance.discount = validated_data.get('discount', instance.discount)
+        instance.effective_price = instance.price - (instance.price * (instance.discount / 100))
+        instance.duration_value = validated_data.get('duration_value', instance.duration_value)
+        instance.duration_unit = validated_data.get('duration_unit', instance.duration_unit)
+        instance.save()
+        return instance
 
-        # Recalculate effective price based on price and discount
-        if price is not None and discount is not None:
-            effective_price = discount
+
+class CoursePriceUpdateSerializer(serializers.ModelSerializer):
+    validity_periods = CourseValidityPeriodSerializer(many=True, required=False)
+
+    class Meta:
+        model = Course
+        fields = ['price', 'discount', 'effective_price', 'expiry_date', 'duration_value', 'duration_unit',
+                  'validity_type', 'validity_periods']
+
+    def validate(self, data):
+        validity_type = data.get('validity_type')
+        if validity_type == 'multiple' and 'validity_periods' not in data:
+            raise serializers.ValidationError("Validity periods are required for multiple validity type.")
+        return data
+
+    def update(self, instance, validated_data):
+        new_validity_type = validated_data.get('validity_type', instance.validity_type)
+
+        # Clear existing validity periods if switching away from "multiple"
+        if instance.validity_type == 'multiple' and new_validity_type != 'multiple':
+            CourseValidityPeriod.objects.filter(course=instance).delete()
+
+        instance.validity_type = new_validity_type
+
+        if new_validity_type == 'multiple':
+            # Handle "Multiple Validity" type
+            CourseValidityPeriod.objects.filter(course=instance).delete()
+            validity_periods_data = validated_data.pop('validity_periods', [])
+            for period_data in validity_periods_data:
+                CourseValidityPeriod.objects.create(course=instance, **period_data)
         else:
-            effective_price = price
-
-        # Update instance with the validated data
-        instance.price = price
-        instance.discount = discount
-        instance.effective_price = effective_price
-        instance.validity_type = validity_type
-        instance.duration_value = duration_value
-        instance.duration_unit = duration_unit
-        instance.expiry_date = expiry_date
+            # Handle "Single", "Lifetime", or "Expiry Date" validity types
+            instance.price = validated_data.get('price', instance.price)
+            instance.discount = validated_data.get('discount', instance.discount)
+            instance.effective_price = instance.price - (
+                        instance.price * (instance.discount / 100)) if instance.price else instance.price
+            instance.duration_value = validated_data.get('duration_value', instance.duration_value)
+            instance.duration_unit = validated_data.get('duration_unit', instance.duration_unit)
+            instance.expiry_date = validated_data.get('expiry_date', instance.expiry_date)
 
         instance.save()
         return instance
@@ -164,3 +170,14 @@ class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
         fields = ['id', 'title', 'folder', 'url', 'created', 'is_locked']
+
+
+class ListCourseSerializer(serializers.ModelSerializer):
+    categories_subcategories = CategorySubCategorySerializer(many=True)
+    created_by = serializers.ReadOnlyField(source='created_by.full_name')
+    faculties = CourseFacultySerializer(source='course_faculties', many=True, read_only=True)
+    validity_periods = CourseValidityPeriodSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Course
+        fields = '__all__'

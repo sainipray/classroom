@@ -16,7 +16,7 @@ from weasyprint import HTML
 
 from abstract.views import ReadOnlyCustomResponseMixin
 from apps.batch.models import BatchPurchaseOrder, Batch, Enrollment
-from apps.course.models import Course, CoursePurchaseOrder
+from apps.course.models import Course, CoursePurchaseOrder, CourseValidityPeriod
 from apps.payment.models import Transaction
 from apps.payment.serializers import VerifyPaymentSerializer, TransactionSerializer, PurchaseCourseSerializer, \
     ApplyCouponSerializer, PurchaseBatchSerializer, PurchaseTestSeriesSerializer
@@ -79,9 +79,12 @@ class GetCoursePricingView(APIView):
 
     def get(self, request, course_id):
         course = get_object_or_404(Course, id=course_id, is_published=True)
-
         # Original price
         original_price = course.effective_price or 0
+        validity_period = request.query_params.get('validity_period')
+        if validity_period:
+            validity_period = int(validity_period)
+            original_price = CourseValidityPeriod.objects.get(course=course, id=validity_period).effective_price
 
         final_price_responses = final_price_with_other_expenses_and_gst(original_price)
 
@@ -130,7 +133,7 @@ class PurchaseCourseView(APIView):
 
         course_id = serializer.validated_data['course_id']
         coupon = serializer.validated_data.get('coupon_code')  # This is a Coupon instance or None
-
+        validity_period = serializer.validated_data.get('validity_period')
         course = get_object_or_404(Course, id=course_id, is_published=True)
 
         # Check if the user has already purchased the course
@@ -141,6 +144,10 @@ class PurchaseCourseView(APIView):
         original_price = course.effective_price or 0
         discount_applied = 0
         price_after_coupon = None
+        if validity_period:
+            validity_period = int(validity_period)
+            original_price = CourseValidityPeriod.objects.get(course=course, id=validity_period).effective_price
+
         if coupon:
             # Apply discount using the enhanced apply_discount method
             price_after_coupon, discount_applied = coupon.apply_discount(original_price, request.user, course)
@@ -167,6 +174,22 @@ class PurchaseCourseView(APIView):
         except Exception as e:
             logger.error(f"Failed to initiate transaction for user {request.user.id}: {str(e)}")
             return Response({"error": "Failed to initiate transaction. Please try again later."},
+                            status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        try:
+            CoursePurchaseOrder.objects.create(
+                student=request.user,
+                course=course,
+                transaction=transaction,
+                amount=final_price_responses['total_amount'],
+                course_validity_id=validity_period,
+
+            )
+            logger.info(
+                f"CoursePurchaseOrder created for transaction {transaction.transaction_id} by user {request.user.id}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to create CoursePurchaseOrder: {str(e)}")
+            return Response({"error": "Failed to create purchase order."},
                             status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         response_data = {
@@ -300,30 +323,28 @@ class VerifyPaymentView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         if verified_transaction.payment_status == 'completed':
-            # Check if the purchase order already exists to ensure idempotency
-            if CoursePurchaseOrder.objects.filter(transaction=verified_transaction).exists():
-                logger.info(f"Purchase order already created for transaction {razorpay_order_id}.")
-                return Response({"status": "Payment already verified and order created."}, status=status.HTTP_200_OK)
 
             # Handle different content types
             content_type = verified_transaction.content_type
             content_id = verified_transaction.content_id
 
             if content_type == Transaction.ContentType.COURSE:
-                course = get_object_or_404(Course, id=content_id)
                 try:
-                    # Create CoursePurchaseOrder
-                    CoursePurchaseOrder.objects.create(
-                        student=request.user,
-                        course=course,
-                        transaction=verified_transaction
-                    )
+                    purchase_order = CoursePurchaseOrder.objects.get(transaction=verified_transaction)
+                except BatchPurchaseOrder.DoesNotExist:
+                    logger.error(f"No CoursePurchaseOrder found for transaction {razorpay_order_id}")
+                    return Response({"error": "Invalid transaction."}, status=status.HTTP_400_BAD_REQUEST)
+
+                if purchase_order.is_paid:
                     logger.info(
-                        f"CoursePurchaseOrder created for transaction {razorpay_order_id} and user {request.user.id}")
-                except Exception as e:
-                    logger.error(f"Failed to create CoursePurchaseOrder for transaction {razorpay_order_id}: {str(e)}")
-                    return Response({"error": "Payment verified, but failed to create purchase order."},
-                                    status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                        f"Already paid for transaction {razorpay_order_id}.")
+                    return Response({"status": "Payment already verified and marked as paid."},
+                                    status=status.HTTP_200_OK)
+
+                purchase_order.is_paid = True
+                purchase_order.payment_date = timezone.now()
+                purchase_order.course_joined_date = timezone.now()
+                purchase_order.save()
 
                 # Increment coupon usage if a coupon was used
                 if verified_transaction.coupon:

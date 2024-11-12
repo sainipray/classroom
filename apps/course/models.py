@@ -160,6 +160,38 @@ class Course(TimeStampedModel):
         return categories_data
 
 
+class CourseValidityPeriod(models.Model):
+    DURATION_UNITS = [
+        ('days', 'Days'),
+        ('months', 'Months'),
+        ('years', 'Years'),
+    ]
+
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="validity_periods")
+    duration_value = models.PositiveIntegerField(verbose_name="Duration Value")
+    duration_unit = models.CharField(max_length=10, choices=DURATION_UNITS, verbose_name="Duration Unit")
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Price")
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Discount")
+    effective_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Effective Price",
+                                          editable=False)
+    is_promoted = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        # Calculate effective price based on price and discount
+        if self.price and self.discount:
+            self.effective_price = self.discount
+        else:
+            self.effective_price = self.price
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.course.name} - {self.duration_value} {self.duration_unit}"
+
+    class Meta:
+        verbose_name_plural = "Course Validity Periods"
+        verbose_name = "Course Validity"
+
+
 class CourseFaculty(TimeStampedModel):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_faculties')
     faculty = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assign_courses')
@@ -312,6 +344,12 @@ class CoursePurchaseOrder(TimeStampedModel):
     student = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Student")
     course = models.ForeignKey(Course, on_delete=models.CASCADE, verbose_name="Course")
     transaction = models.ForeignKey('payment.Transaction', on_delete=models.CASCADE)
+    course_joined_date = models.DateTimeField(null=True, blank=True)
+    course_validity = models.ForeignKey(CourseValidityPeriod, null=True, blank=True, on_delete=models.SET_NULL)
+    # TODO remove null and blank in amount
+    amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    is_paid = models.BooleanField(default=False)
+    payment_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return f"Order for {self.course.name} by {self.student.full_name} on {self.created}"
