@@ -31,6 +31,7 @@ class TestSeriesSerializer(serializers.ModelSerializer):
         instance.url = validated_data.get('url', instance.url)
         instance.highlights = validated_data.get('highlights', instance.highlights)
         instance.thumbnail = validated_data.get('thumbnail', instance.thumbnail)
+        instance.is_digital = validated_data.get('is_digital', instance.is_digital)
         instance.is_published = validated_data.get('is_published', instance.is_published)
         instance.save()
 
