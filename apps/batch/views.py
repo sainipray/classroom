@@ -16,7 +16,7 @@ from rest_framework.viewsets import GenericViewSet
 from abstract.views import CustomResponseMixin
 from config.live_video import MeritHubAPI
 from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial, FeeStructure, Folder, File, \
-    BatchPurchaseOrder, OfflineClass
+    BatchPurchaseOrder, OfflineClass, BatchFaculty
 from .serializers.attendance_serializers import AttendanceSerializer
 from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSerializer, SubjectSerializer, \
     FolderSerializer, FileSerializer
@@ -52,6 +52,34 @@ class BatchViewSet(CustomResponseMixin):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         return Response(status=status.HTTP_201_CREATED, data={'message': "Successfully created"})
+
+    @action(detail=True, methods=['post'], url_path='manage-faculty')
+    def manage_faculty(self, request, pk=None):
+        """
+        Custom action to add or remove a faculty from a course.
+        Expected data:
+        {
+            "faculty_id": <int>,   # ID of the faculty
+            "action": "add" | "remove"  # Action to perform: add or remove
+        }
+        """
+        batch = self.get_object()  # Fetch the course based on `pk`
+        faculty_id = request.data.get('faculty_id')
+        action_type = request.data.get('action')
+
+        if not faculty_id or action_type not in ['add', 'remove']:
+            return Response({"detail": "Invalid data provided."}, status=status.HTTP_400_BAD_REQUEST)
+
+        faculty = get_object_or_404(User, pk=faculty_id)
+        message = ""
+        if action_type == 'add':
+            BatchFaculty.objects.get_or_create(batch=batch, faculty=faculty)
+            message = "Faculty added successfully."
+        elif action_type == 'remove':
+            BatchFaculty.objects.filter(batch=batch, faculty=faculty).delete()
+            message = "Faculty removed successfully."
+
+        return Response({"detail": message}, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=['patch'])
     def toggle_publish(self, request, pk=None):

@@ -1,13 +1,30 @@
 from datetime import timedelta
 
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.batch.models import Batch, Subject, Folder, File, OfflineClass
+from apps.batch.models import Batch, Subject, Folder, File, OfflineClass, BatchFaculty
 from apps.batch.serializers.fee_serializers import FeeStructureSerializer
 from apps.batch.serializers.liveclass_serializers import LiveClassSerializer
-from apps.batch.serializers.offline_classes_serializers import OfflineClassSerializer, RetrieveOfflineClassSerializer
+from apps.batch.serializers.offline_classes_serializers import RetrieveOfflineClassSerializer
 from apps.user.serializers import CustomUserSerializer
+
+User = get_user_model()
+
+
+class FacultySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'full_name', 'email', ]
+
+
+class BatchFacultySerializer(serializers.ModelSerializer):
+    faculty = FacultySerializer(read_only=True)
+
+    class Meta:
+        model = BatchFaculty
+        fields = ['id', 'faculty', 'batch']
 
 
 class SubjectSerializer(serializers.ModelSerializer):
@@ -39,6 +56,8 @@ class RetrieveBatchSerializer(serializers.ModelSerializer):
     enrolled_students = serializers.ReadOnlyField()
     student_join_request = serializers.ReadOnlyField()
     fee_structure = FeeStructureSerializer(read_only=True)
+    faculties = BatchFacultySerializer(source='batch_faculties', many=True, read_only=True)
+
     # TODO filter live class of past one day later
     # live_classes = LiveClassSerializer(read_only=True, many=True)
 
@@ -110,6 +129,7 @@ class RetrieveBatchSerializer(serializers.ModelSerializer):
 class ListBatchSerializer(serializers.ModelSerializer):
     subject = SubjectSerializer()
     created_by = CustomUserSerializer()
+    faculties = BatchFacultySerializer(source='batch_faculties', many=True, read_only=True)
 
     class Meta:
         model = Batch

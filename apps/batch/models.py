@@ -260,6 +260,9 @@ class Enrollment(TimeStampedModel):
         super().save(*args, **kwargs)  # Call the parent class's save method
 
 
+class BatchFaculty(TimeStampedModel):
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='batch_faculties')
+    faculty = models.ForeignKey(User, on_delete=models.CASCADE, related_name='assign_batches')
 
 
 class LiveClass(TimeStampedModel):
