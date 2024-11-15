@@ -34,6 +34,7 @@ class Coupon(TimeStampedModel):
     max_uses = models.PositiveIntegerField(null=True, blank=True, verbose_name="Max Uses")
     usage_per_student = models.PositiveIntegerField(null=True, blank=True, verbose_name="Usage Per Student")
     is_visible = models.BooleanField(default=True, verbose_name="Visibility")
+    is_expired = models.BooleanField(default=False, verbose_name="Expired")
     status = models.BooleanField(default=True, verbose_name="Status")
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="created_coupons",
                                    verbose_name="Created By")
