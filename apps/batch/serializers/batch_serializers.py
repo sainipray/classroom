@@ -13,14 +13,14 @@ from apps.user.serializers import CustomUserSerializer
 User = get_user_model()
 
 
-class FacultySerializer(serializers.ModelSerializer):
+class FacultyBatchSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'full_name', 'email', ]
 
 
 class BatchFacultySerializer(serializers.ModelSerializer):
-    faculty = FacultySerializer(read_only=True)
+    faculty = FacultyBatchSerializer(read_only=True)
 
     class Meta:
         model = BatchFaculty
