@@ -93,6 +93,7 @@ class RetrieveBatchSerializer(serializers.ModelSerializer):
                     # Append filtered time slots with schedules
                     for time_slot in time_slots:
                         result.append({
+                            'id': offline_class.id,
                             'class': RetrieveOfflineClassSerializer(offline_class).data,
                             'time_slot': time_slot.day,
                             'schedules': [
@@ -108,6 +109,7 @@ class RetrieveBatchSerializer(serializers.ModelSerializer):
                 time_slots = offline_class.time_slots.all()
                 for time_slot in time_slots:
                     result.append({
+                        'id': offline_class.id,
                         'class': RetrieveOfflineClassSerializer(offline_class).data,
                         'time_slot': time_slot.day,
                         'schedules': [
