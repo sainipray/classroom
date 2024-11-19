@@ -177,6 +177,7 @@ class ListCourseSerializer(serializers.ModelSerializer):
     created_by = serializers.ReadOnlyField(source='created_by.full_name')
     faculties = CourseFacultySerializer(source='course_faculties', many=True, read_only=True)
     validity_periods = CourseValidityPeriodSerializer(many=True, read_only=True)
+    total_enrolled_students = serializers.ReadOnlyField()
 
     class Meta:
         model = Course

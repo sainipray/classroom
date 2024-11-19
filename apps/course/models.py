@@ -85,6 +85,10 @@ class Course(TimeStampedModel):
         return CoursePurchaseOrder.objects.filter(student=user, course=self).exists()
 
     @property
+    def total_enrolled_students(self):
+        return CoursePurchaseOrder.objects.filter(course=self, is_paid=True).count()
+
+    @property
     def content(self):
         # Define the file extensions for videos and images
         VIDEO_EXTENSIONS = {'mp4', 'mov', 'avi', 'mkv', 'webm'}

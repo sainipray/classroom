@@ -137,7 +137,7 @@ class UserViewSet(CustomResponseMixin):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-class StudentViewSet(viewsets.ModelViewSet):
+class StudentViewSet(CustomResponseMixin):
     queryset = CustomUser.objects.filter(role=Roles.STUDENT).exclude(student__isnull=True)
     serializer_class = StudentUserSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
