@@ -387,7 +387,8 @@ class Attendance(TimeStampedModel):
     live_class_link = models.URLField(verbose_name="Live class Joining Link ", null=True, blank=True)
 
     class Meta:
-        unique_together = ('student', 'live_class')
+        # TODO review this unique together
+        # unique_together = ('student', 'live_class')
         verbose_name = "Attendance"
         verbose_name_plural = "Attendances"
         ordering = ('-created',)
