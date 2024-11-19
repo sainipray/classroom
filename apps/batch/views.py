@@ -22,11 +22,13 @@ from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSeriali
     FolderSerializer, FileSerializer
 from .serializers.enrollment_serializers import EnrollmentSerializer, BatchStudentUserSerializer, \
     ListEnrollmentSerializer
-from .serializers.fee_serializers import FeeStructureSerializer
+from .serializers.fee_serializers import FeeStructureSerializer, AddFeesRecordSerializer
 from .serializers.liveclass_serializers import LiveClassSerializer, RetrieveLiveClassSerializer, \
     CreateLiveClassSerializer
 from .serializers.offline_classes_serializers import OfflineClassSerializer, JoinBatchSerializer
 from .serializers.studymaterial_serializer import StudyMaterialSerializer
+from ..payment.models import Transaction
+from ..payment.utils import final_price_with_other_expenses_and_gst
 from ..utils.functions import merge_and_sort_items
 
 User = get_user_model()
@@ -323,6 +325,50 @@ class FeeStructureViewSet(CustomResponseMixin):
     serializer_class = FeeStructureSerializer
 
 
+class AddFeesRecordAPI(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = AddFeesRecordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        batch = serializer.validated_data['batch']
+        student = serializer.validated_data['student']
+        amount = serializer.validated_data['amount']
+        enrollment = serializer.validated_data.get('enrollment')
+        batch_purchased = serializer.validated_data.get('batch_purchased')
+        reference_number = serializer.validated_data.get('reference_number')
+
+        enrollment.manual_payment_approval = True
+        enrollment.save()
+
+        original_price = batch.fee_structure.fee_amount
+        final_price_responses = final_price_with_other_expenses_and_gst(original_price)
+
+        transaction = Transaction.objects.create(
+            user=student,
+            content_type=Transaction.ContentType.BATCH,
+            content_id=batch.id,
+            amount=amount,
+            transaction_id=reference_number,
+            payment_status=Transaction.PaymentStatus.COMPLETED,
+            original_price=final_price_responses['original_price'],
+            total_amount=final_price_responses['total_amount'],
+            payment_type=Transaction.PaymentType.MANUAL,
+            gst_percentage=final_price_responses['gst_percentage'],
+            internet_charges=final_price_responses['internet_charges'],
+            platform_fees=final_price_responses['platform_fees'],
+        )
+
+        batch_purchased.transaction = transaction
+        batch_purchased.amount = amount
+        batch_purchased.is_paid = True
+        batch_purchased.payment_date = timezone.now()
+        batch_purchased.save()
+
+        return Response(
+            {"message": "Fees record added successfully"},
+            status=status.HTTP_201_CREATED
+        )
+
+
 class FeesRecordAPI(ListAPIView):
 
     def get(self, request, *args, **kwargs):
@@ -332,7 +378,7 @@ class FeesRecordAPI(ListAPIView):
         paid_fees = []
         # 1. Fetch all BatchPurchaseOrders marked as paid
         paid_fees_data = BatchPurchaseOrder.objects.filter(is_paid=True).values(
-            'student__full_name', 'batch__name', 'payment_date'
+            'student__full_name', 'batch__name', 'payment_date', 'installment_number'
         ).annotate(total_paid=Sum('amount'))
 
         for data in paid_fees_data:
@@ -341,6 +387,7 @@ class FeesRecordAPI(ListAPIView):
                 'amount': data['total_paid'],
                 'batch_name': data['batch__name'],
                 'payment_date': data.get('payment_date', ""),
+                'installment_number': data.get('installment_number', ""),
             })
 
         # 2. Fetch approved enrollments with a batch, student, and batch_joined_date

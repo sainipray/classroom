@@ -223,6 +223,11 @@ CONSTANCE_CONFIG = {
     "IFSC": ("", "Bank IFSC code"),
     "SWIFT_CODE": ("", "Bank SWIFT code"),
     "BANK": ("", "Bank name"),
+    "ADDRESS": ("", "Address name"),
+    "PINCODE": ("", "pincode name"),
+    "CITY": ("", "city name"),
+    "STATE": ("", "state name"),
+    "COMPANY_LOGO": ("", "company logo name"),
 
 }
 DEFAULT_FILE_STORAGE = "config.custom_storages.get_storage_class"

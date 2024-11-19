@@ -22,6 +22,11 @@ class Transaction(TimeStampedModel):
         COMPLETED = 'completed', 'Completed'
         FAILED = 'failed', 'Failed'
 
+    class PaymentType(models.TextChoices):
+        RAZORPAY = 'razorpay', 'Razorpay'
+        MANUAL = 'manual', 'Manual'
+
+    payment_type = models.CharField(max_length=20, choices=PaymentType.choices, default=PaymentType.RAZORPAY)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions')
     content_type = models.CharField(max_length=20, choices=ContentType.choices)
     content_id = models.PositiveIntegerField()  # Reference to Course, Batch, or Test Series ID
@@ -30,7 +35,7 @@ class Transaction(TimeStampedModel):
     payment_status = models.CharField(
         max_length=20,
         choices=PaymentStatus.choices,
-        default='pending'
+        default=PaymentStatus.PENDING
     )
 
     original_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)

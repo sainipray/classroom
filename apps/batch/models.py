@@ -415,7 +415,7 @@ class BatchPurchaseOrder(TimeStampedModel):
     student = models.ForeignKey(User, related_name='batch_purchases', on_delete=models.CASCADE)
     batch = models.ForeignKey('Batch', related_name='purchase_orders', on_delete=models.CASCADE)
     transaction = models.ForeignKey('payment.Transaction', related_name='batch_purchase_orders',
-                                    on_delete=models.CASCADE)
+                                    on_delete=models.CASCADE, null=True, blank=True)
     installment_number = models.PositiveIntegerField(default=1)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     is_paid = models.BooleanField(default=False)

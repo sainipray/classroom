@@ -5,7 +5,7 @@ from .student_views import AvailableBatchViewSet, PurchasedBatchViewSet, Student
     StudentBatchAttendanceViewSet, StudentFeesRecordAPI
 from .views import (SubjectViewSet, BatchViewSet, EnrollmentViewSet, LiveClassViewSet, AttendanceViewSet,
                     StudyMaterialViewSet, CreateLiveClassView, FeeStructureViewSet, FeesRecordAPI, FolderFileViewSet,
-                    OfflineClassViewSet, StudentJoinBatchView)
+                    OfflineClassViewSet, StudentJoinBatchView, AddFeesRecordAPI)
 
 router = DefaultRouter()
 router.register(r'subjects', SubjectViewSet)
@@ -27,6 +27,7 @@ urlpatterns = [
     path('', include(student_router.urls)),
     path('create-live-class/', CreateLiveClassView.as_view(), name='create_live_class'),
     path('fees-record/', FeesRecordAPI.as_view(), name='fees_record'),
+    path('add-fees-record/', AddFeesRecordAPI.as_view(), name='add_fees_record'),
     path('student/join-batch/', StudentJoinBatchView.as_view(), name='join_batch'),
 
     # Student URL

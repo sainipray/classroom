@@ -60,6 +60,11 @@ class SettingKeys(Enum):
     IFSC = "IFSC"
     SWIFT_CODE = "SWIFT_CODE"
     BANK = "BANK"
+    ADDRESS = "ADDRESS"
+    PINCODE = "PINCODE"
+    CITY = "CITY"
+    STATE = "STATE"
+    COMPANY_LOGO = "COMPANY_LOGO"
 
     @classmethod
     def values(cls):
