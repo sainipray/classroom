@@ -180,14 +180,18 @@ class StudentFeesRecordAPI(ListAPIView):
 
 class StudentBatchClassesView(AbstractBatchStudentView, APIView):
     def get(self, request, *args, **kwargs):
-        data = []
+        main_live_classes = []
+        main_offline_classes = []
         for batch in self.get_purchased_batches():
             live_classes = batch.live_classes.all()
             live_classes_data = StudentLiveClassSerializer(live_classes, many=True).data
-            offline_classes = generate_offline_classes(batch)
-            data.append({
-                'batch_name': batch.name,
-                'live_classes': live_classes_data,
-                'offline_classes': offline_classes
-            })
+            offline_class = generate_offline_classes(batch)
+
+            main_live_classes.append(live_classes_data)
+            main_offline_classes.append(offline_class)
+
+        data = {
+            'live_classes': main_live_classes,
+            'offline_classes': main_offline_classes
+        }
         return Response(data)
