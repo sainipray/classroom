@@ -6,20 +6,19 @@ from django.utils import timezone
 from rest_framework import viewsets, mixins
 from rest_framework.generics import ListAPIView
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from abstract.views import ReadOnlyCustomResponseMixin
 from .models import Batch, Enrollment, \
     BatchPurchaseOrder, LiveClass, Attendance  # Assuming you have an Enrollment model for student batch enrollments
 from .student_serializers import StudentBatchSerializer, StudentRetrieveBatchSerializer, \
-    StudentLiveClassSerializer, StudentAttendanceSerializer  # Create these serializers
+    StudentLiveClassSerializer, StudentAttendanceSerializer, generate_offline_classes  # Create these serializers
 
 
-class AvailableBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelViewSet):
-    serializer_class = StudentBatchSerializer
-    retrieve_serializer_class = StudentRetrieveBatchSerializer
+class AbstractBatchStudentView:
 
-    def get_queryset(self):
+    def get_available_batches(self):
         # Retrieve all Enrollment records for the authenticated user
         enrolled_batch_ids = Enrollment.objects.filter(student=self.request.user, is_approved=True).values_list(
             'batch_id', flat=True)
@@ -36,15 +35,9 @@ class AvailableBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelV
         ).exclude(
             id__in=purchased_batch_ids  # Exclude purchased batches if necessary
         )
-
         return available_batches
 
-
-class PurchasedBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelViewSet):
-    serializer_class = StudentBatchSerializer
-    retrieve_serializer_class = StudentRetrieveBatchSerializer
-
-    def get_queryset(self):
+    def get_purchased_batches(self):
         # Retrieve batch IDs for enrolled batches for the authenticated user
         enrolled_batches = Enrollment.objects.filter(student=self.request.user, is_approved=True).values_list(
             'batch_id', flat=True)
@@ -60,6 +53,22 @@ class PurchasedBatchViewSet(ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelV
         return Batch.objects.filter(
             id__in=combined_batch_ids
         ).select_related('created_by').filter(is_published=True)  # Ensure the batches are published
+
+
+class AvailableBatchViewSet(AbstractBatchStudentView, ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelViewSet):
+    serializer_class = StudentBatchSerializer
+    retrieve_serializer_class = StudentRetrieveBatchSerializer
+
+    def get_queryset(self):
+        return self.get_available_batches()
+
+
+class PurchasedBatchViewSet(AbstractBatchStudentView, ReadOnlyCustomResponseMixin, viewsets.ReadOnlyModelViewSet):
+    serializer_class = StudentBatchSerializer
+    retrieve_serializer_class = StudentRetrieveBatchSerializer
+
+    def get_queryset(self):
+        return self.get_purchased_batches()
 
 
 class StudentLiveClassesViewSet(mixins.ListModelMixin,
@@ -167,3 +176,18 @@ class StudentFeesRecordAPI(ListAPIView):
         }
 
         return Response(response_data)
+
+
+class StudentBatchClassesView(AbstractBatchStudentView, APIView):
+    def get(self, request, *args, **kwargs):
+        data = []
+        for batch in self.get_purchased_batches():
+            live_classes = batch.live_classes.all()
+            live_classes_data = StudentLiveClassSerializer(live_classes, many=True).data
+            offline_classes = generate_offline_classes(batch)
+            data.append({
+                'batch_name': batch.name,
+                'live_classes': live_classes_data,
+                'offline_classes': offline_classes
+            })
+        return Response(data)
