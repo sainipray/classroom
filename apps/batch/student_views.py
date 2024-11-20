@@ -187,8 +187,8 @@ class StudentBatchClassesView(AbstractBatchStudentView, APIView):
             live_classes_data = StudentLiveClassSerializer(live_classes, many=True).data
             offline_class = generate_offline_classes(batch)
 
-            main_live_classes.append(live_classes_data)
-            main_offline_classes.append(offline_class)
+            main_live_classes.extend(live_classes_data)
+            main_offline_classes.extend(offline_class)
 
         data = {
             'live_classes': main_live_classes,
