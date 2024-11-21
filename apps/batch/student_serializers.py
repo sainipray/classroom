@@ -30,6 +30,7 @@ def generate_offline_classes(obj):
                     result.append({
                         'class': RetrieveOfflineClassSerializer(offline_class).data,
                         'time_slot': time_slot.day,
+                        'date': next_day,  # Add the calculated date for regular classes
                         'schedules': [
                             {
                                 'start_time': schedule.start_time,
@@ -46,6 +47,7 @@ def generate_offline_classes(obj):
                 result.append({
                     'class': RetrieveOfflineClassSerializer(offline_class).data,
                     'time_slot': time_slot.day,
+                    'date': time_slot.date,  # Use the specific date for one-time classes
                     'schedules': [
                         {
                             'start_time': schedule.start_time,

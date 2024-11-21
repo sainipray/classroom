@@ -344,6 +344,7 @@ class TimeSlot(TimeStampedModel):
         choices=DaysOfWeek.choices,
         verbose_name='Day of the Week'
     )
+    date = models.DateField(null=True, blank=True, verbose_name='Date')
 
     class Meta:
         verbose_name = 'Time Slot'
