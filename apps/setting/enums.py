@@ -53,6 +53,8 @@ class SettingKeys(Enum):
     PAN = "PAN"
     EMAIL = "EMAIL"
     PHONE = "PHONE"
+    INVOICE_PRE_FIX = "INVOICE_PRE_FIX"
+    INVOICE_NUMBER_COUNTER = "INVOICE_PRE_FIX"
 
     # New bank details keys
     ACCOUNT_NAME = "ACCOUNT_NAME"

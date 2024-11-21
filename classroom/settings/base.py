@@ -141,7 +141,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = "static/"
-
+STATICFILES_DIRS = [
+        BASE_DIR / "static",
+]
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -216,6 +218,8 @@ CONSTANCE_CONFIG = {
     "PAN": ("", "Company PAN number"),
     "EMAIL": ("", "Company contact email"),
     "PHONE": ("", "Company contact phone number"),
+    "INVOICE_NUMBER_COUNTER": (1, "Invoice number counter"),
+    "INVOICE_PRE_FIX": ("INVOICE-24-25", "Invoice pre fix"),
 
     # Bank Details
     "ACCOUNT_NAME": ("", "Bank account name"),

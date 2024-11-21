@@ -1,3 +1,4 @@
+{% load static custom_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -62,18 +63,17 @@
             display: flex;
             justify-content: space-between;
             margin-bottom: 20px;
-            gap: 20px;
+            gap: 30px;
         }
 
         .billed-by, .billed-to {
-            width: 50%;
+            width: 45%;
             background-color: #efebf8;
             padding: 15px;
             border-radius: 8px;
         }
 
         .billed-by h4, .billed-to h4 {
-            font-size: 18px;
             color: #02b3e4;
             margin-bottom: 10px;
             font-weight: 400;
@@ -215,11 +215,11 @@
 <header class="invoice-header">
     <div class="header-left">
         <h2>Invoice</h2>
-        <p>Invoice No # <span>2024-25/0005</span></p>
-        <p>Invoice Date <span>Oct 16, 2024</span></p>
+        <p>Invoice No # <span>{{ config.INVOICE_PRE_FIX }}/{{ config.INVOICE_NUMBER_COUNTER }}</span></p>
+        <p>Invoice Date <span>{{ transaction.created|date:"M d, Y" }}</span></p>
     </div>
     <div class="header-right">
-        <img src="logo.png" alt="Orbit Infosoft Logo">
+        <img src="/static/images/logo.png" alt="Orbit Infosoft Logo">
     </div>
 </header>
 
@@ -235,11 +235,11 @@
     </div>
     <div class="billed-to">
         <h4>Billed To</h4>
-        <h5>Govind Saini</h5>
-        <p>Shop No-B-51, Alankar Plaza, Jaipur,<br>
-            Rajasthan, India - 302039</p>
-        <p>Email: info@orbitinfotech.com</p>
-        <p>Phone: +91 80587 47835</p>
+        <h5>{{ transaction.user.full_name }}</h5>
+        <p>{{ transaction.user.student.permanent_address }}, <br>
+            {{ transaction.user.student.permanent_address_pincode }}</p>
+        <p>Email: {{ transaction.user.email }}</p>
+        <p>Phone: {{ transaction.user.phone_number }}</p>
     </div>
 </section>
 
@@ -247,7 +247,6 @@
     <thead>
     <tr>
         <th>Item</th>
-        <th>GST Rate</th>
         <th>Quantity</th>
         <th>Rate</th>
         <th>Amount</th>
@@ -256,8 +255,7 @@
     </thead>
     <tbody>
     <tr>
-        <td>1. {{ transaction.content_type }} - {{ transaction.content_name }}</td>
-        <td>{{ transaction.gst_percentage }}%</td>
+        <td>1. {{ transaction.content_type|title }} - {{ transaction.content_name|title }}</td>
         <td>1</td>
         <td>₹{{ transaction.original_price }}</td>
         <td>₹{{ transaction.original_price }}</td>
@@ -269,7 +267,7 @@
 </table>
 <section class="summary-section">
     <div class="total-in-words">
-        <p>Total (in words) : <span>TWENTY NINE THOUSAND RUPEES ONLY</span></p>
+        <p>Total (in words) : <span>{{ transaction.total_amount|inr_in_words }}</span></p>
     </div>
     <div class="details-container">
         <div class="bank-details">
@@ -281,16 +279,16 @@
             <p><strong>Bank:</strong> {{ config.BANK }}</p>
         </div>
         <div class="amount-summary">
-            <p>Amount <span>₹{{ transaction.after_discount_price }}</span></p>
+            <p>Amount <span>₹{{ transaction.after_discount_price|floatformat:"2g" }}</span></p>
             {% if transaction.coupon %}
             <p>Coupon <span>₹{{ transaction.coupon.name }}</span></p>
             {% endif %}
             <p>Platform Fees <span>₹{{ transaction.platform_fees}} </span></p>
             <p>Internet Charges <span>₹{{ transaction.internet_charges}} </span></p>
-            <p>Total Amount Before GST <span>₹{{ transaction.total_price_before_gst }} </span></p>
-            <p>GST: <span>{{ transaction.gst_calculation }}%</span></p>
+            <p>Total Amount Before GST <span>₹{{ transaction.total_price_before_gst|floatformat:"2g" }} </span></p>
+            <p>GST: <span>{{ transaction.gst_calculation|floatformat:"2g" }}%</span></p>
             <div class="total-line">
-                <p><strong>Total (INR)</strong> <span><strong>₹{{ transaction.total_amount }}</strong></span></p>
+                <p><strong>Total (INR)</strong> <span><strong>₹{{ transaction.total_amount|floatformat:"2g" }}</strong></span></p>
             </div>
         </div>
     </div>

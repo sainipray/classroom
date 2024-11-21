@@ -1,18 +1,15 @@
 import logging
-import tempfile
 from decimal import Decimal
 
+from constance import config
 from django.conf import settings
 from django.db import transaction as db_transaction
-from django.http import HttpResponse
-from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from weasyprint import HTML
 
 from abstract.views import ReadOnlyCustomResponseMixin
 from apps.batch.models import BatchPurchaseOrder, Batch, Enrollment
@@ -23,6 +20,7 @@ from apps.payment.serializers import VerifyPaymentSerializer, TransactionSeriali
 from apps.payment.utils import final_price_with_other_expenses_and_gst
 from apps.test_series.models import TestSeries, TestSeriesPurchaseOrder
 from config.razor_payment import RazorpayService
+from config.weasy_pdf import generate_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -35,17 +33,24 @@ class TransactionViewSet(ReadOnlyCustomResponseMixin):
     def download_pdf(self, request, pk=None):
         transaction = self.get_object()
         # Render the HTML template with context data
-        html_string = render_to_string('invoice/invoice.html', {'transaction': transaction})
+        context = {
+            'transaction': transaction,
+            'config': config,
+            'request': request,  # Include request if needed for absolute URLs
+        }
 
-        # Create a temporary file for the PDF
-        with tempfile.NamedTemporaryFile(suffix=".pdf") as temp_pdf:
-            HTML(string=html_string).write_pdf(temp_pdf.name)
-
-            # Read the PDF and return it as an HTTP response
-            with open(temp_pdf.name, 'rb') as pdf:
-                response = HttpResponse(pdf.read(), content_type='application/pdf')
-                response['Content-Disposition'] = f'attachment; filename="transaction_{transaction.id}.pdf"'
-                return response
+        # Generate and return the PDF
+        response = generate_pdf(
+            template_name='invoice/invoice.html',
+            context=context,
+            output_filename=f'transaction_{transaction.id}.pdf',
+            request=request
+        )
+        current_value = config.INVOICE_NUMBER_COUNTER
+        if not current_value:
+            current_value = 0
+        setattr(config, 'INVOICE_NUMBER_COUNTER', int(current_value) + 1)
+        return response
 
 
 class GetCoursePricingView(APIView):
