@@ -183,7 +183,8 @@ class StudentBatchClassesView(AbstractBatchStudentView, APIView):
         main_live_classes = []
         main_offline_classes = []
         for batch in self.get_purchased_batches():
-            live_classes = batch.live_classes.all()
+            current_date = timezone.now()
+            live_classes = batch.live_classes.filter(date__gte=current_date)
             live_classes_data = StudentLiveClassSerializer(live_classes, many=True).data
             offline_class = generate_offline_classes(batch)
 
