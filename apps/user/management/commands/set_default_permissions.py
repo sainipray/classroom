@@ -11,11 +11,8 @@ class Command(BaseCommand):
         permissions_data = [
             'Courses', 'Students', 'Fee Record', 'Fee Structure', 'Batches',
             'Coupons', 'Quiz', 'Lead & Inquiries', 'Products',
-            'Transactions', 'Free Resource', 'Team Members', 'Report', 'Settings'
+            'Transactions', 'Free Resource', 'Team Members', 'Report', 'Settings', 'Chat'
         ]
-
-        # delete all
-        Module.objects.all().delete()
 
         # Create modules if they don't exist
         for module_name in permissions_data:
@@ -35,10 +32,10 @@ class Command(BaseCommand):
 
         # Loop through the roles and set permissions for each module
         for module_name in permissions_data:
+            module = Module.objects.get(name=module_name)
             for role, permissions in default_permissions.items():
-                module = Module.objects.get(name=module_name)
                 # Replace existing permissions if they exist
-                permission, created = ModulePermission.objects.update_or_create(
+                permission, created = ModulePermission.objects.get_or_create(
                     role=role,
                     module=module,
                     defaults={
