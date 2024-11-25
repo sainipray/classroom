@@ -215,6 +215,7 @@ CONSTANCE_CONFIG = {
     # Company Information
     "BILLED_BY": ("", "Company or individual billed by"),
     "GSTIN": ("", "Company GSTIN number"),
+    "COMPANY_ADDRESS": ("", "Company Address"),
     "PAN": ("", "Company PAN number"),
     "EMAIL": ("", "Company contact email"),
     "PHONE": ("", "Company contact phone number"),

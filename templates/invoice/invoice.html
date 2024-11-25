@@ -285,8 +285,7 @@
             {% endif %}
             <p>Platform Fees <span>₹{{ transaction.platform_fees}} </span></p>
             <p>Internet Charges <span>₹{{ transaction.internet_charges}} </span></p>
-            <p>Total Amount Before GST <span>₹{{ transaction.total_price_before_gst|floatformat:"2g" }} </span></p>
-            <p>GST: <span>{{ transaction.gst_calculation|floatformat:"2g" }}%</span></p>
+            <p>GST: <span>{{ transaction.gst_calculation|floatformat:"2g" }} ({{ transaction.gst_percentage }}%)</span></p>
             <div class="total-line">
                 <p><strong>Total (INR)</strong> <span><strong>₹{{ transaction.total_amount|floatformat:"2g" }}</strong></span></p>
             </div>

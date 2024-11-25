@@ -61,17 +61,15 @@ class Transaction(TimeStampedModel):
 
     @property
     def gst_calculation(self):
-        remaining_amount = self.total_price_before_gst
-        if self.gst_percentage:
-            return (remaining_amount * self.gst_percentage) / 100
-        return
+        return self.total_amount - self.total_price_before_gst
 
     @property
     def after_discount_price(self):
         return self.original_price - self.discount_applied
+
     @property
     def total_price_before_gst(self):
-        return self.amount + self.platform_fees + self.internet_charges
+        return self.original_price + self.platform_fees + self.internet_charges
 
     @property
     def student_name(self):
