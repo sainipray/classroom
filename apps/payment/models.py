@@ -1,5 +1,5 @@
 # apps/payment/models.py
-
+from constance import config
 from django.contrib.auth import get_user_model
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
@@ -52,12 +52,26 @@ class Transaction(TimeStampedModel):
     coupon = models.ForeignKey('coupon.Coupon', on_delete=models.SET_NULL, null=True, blank=True)
 
     payment_id = models.CharField(max_length=255, null=True, blank=True)  # Razorpay Payment ID
+    invoice_counter = models.PositiveIntegerField(default=1, null=True, blank=True)
 
     def __str__(self):
         return f'Transaction {self.transaction_id} for {self.content_type.capitalize()} {self.content_id}'
 
     class Meta:
         ordering = ('-created',)
+
+    def save(self, *args, **kwargs):
+        # Save the instance first in case it's being saved with a status update
+        super().save(*args, **kwargs)
+
+        # Only proceed if the payment status is COMPLETED and no invoice_counter is set
+        if self.payment_status == self.PaymentStatus.COMPLETED and not self.invoice_counter:
+            current_value = config.INVOICE_NUMBER_COUNTER
+            if not current_value:
+                current_value = 1
+            self.invoice_counter = current_value
+            setattr(config, 'INVOICE_NUMBER_COUNTER', int(current_value) + 1)
+            super().save(*args, **kwargs)
 
     @property
     def gst_calculation(self):

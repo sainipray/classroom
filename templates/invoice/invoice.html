@@ -215,7 +215,7 @@
 <header class="invoice-header">
     <div class="header-left">
         <h2>Invoice</h2>
-        <p>Invoice No # <span>{{ config.INVOICE_PRE_FIX }}/{{ config.INVOICE_NUMBER_COUNTER }}</span></p>
+        <p>Invoice No # <span>{{ config.INVOICE_PRE_FIX }}/{{ transaction.invoice_counter }}</span></p>
         <p>Invoice Date <span>{{ transaction.created|date:"M d, Y" }}</span></p>
     </div>
     <div class="header-right">

@@ -46,10 +46,10 @@ class TransactionViewSet(ReadOnlyCustomResponseMixin):
             output_filename=f'transaction_{transaction.id}.pdf',
             request=request
         )
-        current_value = config.INVOICE_NUMBER_COUNTER
-        if not current_value:
-            current_value = 0
-        setattr(config, 'INVOICE_NUMBER_COUNTER', int(current_value) + 1)
+        # current_value = config.INVOICE_NUMBER_COUNTER
+        # if not current_value:
+        #     current_value = 0
+        # setattr(config, 'INVOICE_NUMBER_COUNTER', int(current_value) + 1)
         return response
 
 
