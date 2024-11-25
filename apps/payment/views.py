@@ -410,8 +410,9 @@ class ApplyCouponView(APIView):
         serializer.is_valid(raise_exception=True)
         course_id = serializer.validated_data['course_id']
         coupon = serializer.validated_data['coupon_code']
+        validity_period = serializer.validated_data.get('validity_period')
         course = get_object_or_404(Course, id=course_id)
-        original_price = course.effective_price
+        original_price = course.calculate_price(validity_period)
 
         price_after_coupon, discount_amount = coupon.apply_discount(original_price, request.user, course)
         final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price),

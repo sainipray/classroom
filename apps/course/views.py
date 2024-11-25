@@ -4,10 +4,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from abstract.views import CustomResponseMixin
+from .filters import CourseFilter
 from .models import Category, Subcategory, Course, Folder, File, CourseFaculty
 from .serializers import CategorySerializer, SubcategorySerializer, CourseSerializer, CoursePriceUpdateSerializer, \
     ListCourseSerializer, FolderSerializer, FileSerializer, ListSubcategorySerializer
@@ -90,6 +92,9 @@ class CourseViewSet(CustomResponseMixin):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     list_serializer_class = ListCourseSerializer
+    filter_backends = (DjangoFilterBackend, SearchFilter)
+    search_fields = ('name',)
+    filterset_class = CourseFilter
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, context={'request': request})

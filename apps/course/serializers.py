@@ -61,6 +61,18 @@ class CourseSerializer(serializers.ModelSerializer):
             'is_published', 'is_featured', 'categories'
         ]
 
+    def validate(self, attrs):
+        request = self.context.get('request')
+        user = request.user
+
+        # Check if a course with the same name already exists for the user
+        if Course.objects.filter(name=attrs['name'], created_by=user).exists():
+            raise serializers.ValidationError({
+                'name': 'You already have a course with this name.'
+            })
+
+        return attrs
+
     def create(self, validated_data):
         request = self.context.get('request')
         categories_data = validated_data.pop('categories', [])

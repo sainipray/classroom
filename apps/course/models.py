@@ -81,6 +81,19 @@ class Course(TimeStampedModel):
     class Meta:
         ordering = ('-created',)
 
+    def calculate_price(self, validity_period=None):
+        if self.validity_type == 'multiple':
+            if validity_period:
+                return self.validity_periods.get(id=validity_period).effective_price
+            all_pricing = self.validity_periods.all()
+            if all_pricing.filter(is_promoted=True).exists():
+                return all_pricing.filter(is_promoted=True).first().effective_price
+            else:
+                return all_pricing.first().effective_price
+
+        else:
+            return self.effective_price
+
     def is_student_enrolled(self, user):
         return CoursePurchaseOrder.objects.filter(student=user, course=self).exists()
 

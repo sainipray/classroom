@@ -83,12 +83,14 @@ class PurchaseCourseSerializer(serializers.Serializer):
 class ApplyCouponSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
     coupon_code = serializers.CharField(max_length=50)
+    validity_period = serializers.IntegerField(required=False)
 
     def validate_course_id(self, value):
         # Check if the course is valid and published
         if not Course.objects.filter(id=value, is_published=True).exists():
             raise serializers.ValidationError("Invalid or unpublished course ID.")
         return value
+
 
     def validate_coupon_code(self, value):
         try:
@@ -132,12 +134,17 @@ class ApplyCouponSerializer(serializers.Serializer):
         request = self.context['request']
         coupon = attrs.get('coupon_code')
         course_id = attrs.get('course_id')
+        validity_period = attrs.get('validity_period')
         course = Course.objects.get(id=course_id)
+        if course.validity_type == 'multiple':
+            if not validity_period:
+                raise serializers.ValidationError({'coupon': 'Validity missing for multiple pricing'})
         if coupon and course_id:
             if coupon.courses and not coupon.is_all_courses and course.id not in coupon.courses:
                 raise serializers.ValidationError("This coupon is not applicable to the selected course.")
         # Just for checking coupon all validation passed
-        coupon.apply_discount(course.effective_price, request.user, course)
+
+        coupon.apply_discount(course.calculate_price(validity_period), request.user, course)
         return attrs
 
 
