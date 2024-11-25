@@ -11,10 +11,10 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
 class TimeSlotSerializer(serializers.ModelSerializer):
     schedules = ScheduleSerializer(many=True)  # Nested schedules
-
+    date = serializers.DateField(required=False)
     class Meta:
         model = TimeSlot
-        fields = ['id', 'day', 'schedules']  # Include necessary fields
+        fields = ['id', 'day', 'schedules', 'date']  # Include necessary fields
 
     def create(self, validated_data):
         schedules_data = validated_data.pop('schedules')

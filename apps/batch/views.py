@@ -16,7 +16,7 @@ from rest_framework.viewsets import GenericViewSet
 from abstract.views import CustomResponseMixin
 from config.live_video import MeritHubAPI
 from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial, FeeStructure, Folder, File, \
-    BatchPurchaseOrder, OfflineClass, BatchFaculty
+    BatchPurchaseOrder, OfflineClass, BatchFaculty, Schedule
 from .serializers.attendance_serializers import AttendanceSerializer
 from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSerializer, SubjectSerializer, \
     FolderSerializer, FileSerializer
@@ -537,6 +537,18 @@ class FolderFileViewSet(viewsets.ViewSet):
 class OfflineClassViewSet(CustomResponseMixin):
     queryset = OfflineClass.objects.all()
     serializer_class = OfflineClassSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.class_type == OfflineClass.ClassType.ONE_TIME:
+            instance.delete()
+            return Response({'message': 'Offline Schedule deleted'}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            schedule = self.request.query_params.get('schedule', None)
+            if schedule and Schedule.objects.filter(timeslot__batch_class=instance).exists():
+                Schedule.objects.filter(id=schedule).delete()
+                return Response({'message': 'Offline Schedule deleted'}, status=status.HTTP_204_NO_CONTENT)
+        return Response({'error': "Offline Schedule not found"}, status=status.HTTP_404_NOT_FOUND)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

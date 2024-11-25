@@ -98,6 +98,7 @@ class RetrieveBatchSerializer(serializers.ModelSerializer):
                             'time_slot': time_slot.day,
                             'schedules': [
                                 {
+                                    'id': schedule.id,
                                     'start_time': schedule.start_time,
                                     'end_time': schedule.end_time
                                 }
@@ -114,6 +115,7 @@ class RetrieveBatchSerializer(serializers.ModelSerializer):
                         'time_slot': time_slot.day,
                         'schedules': [
                             {
+                                'id': schedule.id,
                                 'start_time': schedule.start_time,
                                 'end_time': schedule.end_time
                             }
