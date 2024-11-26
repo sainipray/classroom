@@ -50,7 +50,7 @@ class Course(TimeStampedModel):
     ]
     name = models.CharField(max_length=255, verbose_name="Course Name")
     description = models.TextField(verbose_name="Course Description")
-    thumbnail = models.CharField(max_length=255, verbose_name="Thumbnail")
+    thumbnail = models.CharField(max_length=255, verbose_name="Thumbnail", null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Price", null=True, blank=True)
     discount = models.DecimalField(max_digits=10, decimal_places=2, default=0, verbose_name="Discount")
     effective_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name="Effective Price",
