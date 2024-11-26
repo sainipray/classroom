@@ -232,11 +232,15 @@ class PurchaseTestSeriesView(APIView):
             return Response({"error": "You have already purchased this test series."},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        original_price = test_series.effective_price or 0
+        original_price = test_series.effective_price
         discount_applied = 0
         price_after_coupon = None
 
-        final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price))
+        if not test_series.is_digital:
+            final_price_responses = final_price_with_other_expenses_and_gst(
+                Decimal(original_price), gst_percentage=Decimal(test_series.physical_product.gst))
+        else:
+            final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price))
 
         try:
             razorpay_service = RazorpayService()

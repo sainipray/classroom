@@ -42,7 +42,25 @@ class TestSeries(TimeStampedModel):
         super().save(**kwargs)
 
 
+class PhysicalProduct(TimeStampedModel):
+    class DeliveryStatus(models.TextChoices):
+        SHIPPED = 'shipped', 'Shipped'
+        IN_TRANSIT = 'in-transit', 'In-Transit'
+        DELIVERED = 'delivered', 'Delivered'
+        DELIVERY_PENDING = 'delivery-pending', 'Delivery Pending'
+
+    test_series = models.OneToOneField(TestSeries, on_delete=models.CASCADE, related_name='physical_product')
+    delivery_status = models.CharField(
+        max_length=20,
+        choices=DeliveryStatus.choices,
+        default=DeliveryStatus.DELIVERY_PENDING,
+    )
+    gst = models.PositiveSmallIntegerField(default=18)
+
+
 # class TestSeriesStudentAddress(TimeStampedModel):
+
+
 #     street = models.CharField(max_length=255)
 #     city = models.CharField(max_length=100)
 #     state = models.CharField(max_length=100)
