@@ -1,6 +1,7 @@
 # config/razor_payment.py
 
 import razorpay
+from constance import config
 from django.conf import settings
 from django.db import transaction as db_transaction
 from django.shortcuts import get_object_or_404
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 class RazorpayService:
     def __init__(self):
         # Initialize Razorpay client with secure credentials from settings
-        self.client = razorpay.Client(auth=('rzp_test_2cywPv1gKde6UC', 'ugceTueR2rPXQGjE2rcIwBfM'))
+        self.client = razorpay.Client(auth=(config.RAZORPAY_API_KEY, config.RAZORPAY_API_SECRET))
 
     def initiate_transaction(
             self,

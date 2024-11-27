@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from constance import config
 from dateutil.relativedelta import relativedelta
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
@@ -241,8 +242,8 @@ class CreateLiveClassView(APIView):
         batch = validated_data['batch']
 
         # Assuming you have configured your client ID and secret key in settings
-        client_id = "cqb8fh1nuvta0dldbsdg"
-        secret_key = "$2a$04$fQ7kQ1or4UnWWC76vtFPKeovH3CJNWHiQTcJH03VuEJvpX7VDWENW"
+        client_id = config.MERITHUB_CLIENT_ID
+        secret_key = config.MERITHUB_CLIENT_SECRET
         api = MeritHubAPI(client_id, secret_key)
 
         # Prepare the class data

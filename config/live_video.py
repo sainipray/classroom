@@ -190,12 +190,3 @@ class MeritHubAPI:
         print(f"Private chat links for class {class_id}: {private_chats}")
         # Log or save data as needed
 
-# Example Usage:
-# api = MeritHubAPI(client_id="cqb8fh1nuvta0dldbsdg",, secret_key="$2a$04$fQ7kQ1or4UnWWC76vtFPKeovH3CJNWHiQTcJH03VuEJvpX7VDWENW    ")
-# user_data = {"name": "John Doe", "email": "john@example.com"}
-# api.create_user(user_data)
-# class_data = {"name": "Math Class", "start_time": "2024-09-20T15:00:00Z", "duration": 60}
-# api.schedule_class(user_id="Manager_id", class_data=class_data)
-# api.add_students_to_class(class_id="class_id", users=["student1_id", "student2_id"])
-# api.remove_users_from_class(class_id="class_id", users=["student1_id"])
-# api.delete_class(class_id="class_id")

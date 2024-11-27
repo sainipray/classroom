@@ -175,7 +175,6 @@ CONSTANCE_CONFIG = {
     "SHOW_RECORDED_CLASS_ON_WEB": (True, "Show recorded class on web"),
     "ATTENDANCE_CRITERIA": (75, "Attendance criteria in %"),
     # Payment Gateway Settings
-    "RAZORPAY_API_BASE_URL": ("", "Razorpay API Base URL"),
     "RAZORPAY_API_KEY": ("", "Razorpay API Key"),
     "RAZORPAY_API_SECRET": ("", "Razorpay API Secret"),
     # SMS Gateway (DLT) Settings
@@ -193,7 +192,6 @@ CONSTANCE_CONFIG = {
     "SMTP_MAIL_FROM_NAME": ("", "SMTP Mail From Name"),
     "SMTP_MAIL_BCC_LIST": ("", "SMTP Mail BCC List"),
     # MeritHub API Settings
-    "MERITHUB_API_BASE_URL": ("", "MeritHub API Base URL"),
     "MERITHUB_CLIENT_ID": ("", "MeritHub Client ID"),
     "MERITHUB_CLIENT_SECRET": ("", "MeritHub Client Secret"),
     # Firebase Settings
