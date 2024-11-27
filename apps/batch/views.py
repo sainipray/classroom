@@ -16,7 +16,7 @@ from rest_framework.viewsets import GenericViewSet
 from abstract.views import CustomResponseMixin
 from config.live_video import MeritHubAPI
 from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial, FeeStructure, Folder, File, \
-    BatchPurchaseOrder, OfflineClass, BatchFaculty, Schedule
+    BatchPurchaseOrder, OfflineClass, BatchFaculty, Schedule, TimeSlot
 from .serializers.attendance_serializers import AttendanceSerializer
 from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSerializer, SubjectSerializer, \
     FolderSerializer, FileSerializer
@@ -540,14 +540,30 @@ class OfflineClassViewSet(CustomResponseMixin):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+
         if instance.class_type == OfflineClass.ClassType.ONE_TIME:
             instance.delete()
             return Response({'message': 'Offline Schedule deleted'}, status=status.HTTP_204_NO_CONTENT)
-        else:
-            schedule = self.request.query_params.get('schedule', None)
-            if schedule and Schedule.objects.filter(timeslot__batch_class=instance).exists():
-                Schedule.objects.filter(id=schedule).delete()
+
+        schedule_id = self.request.query_params.get('schedule')
+        if schedule_id:
+            # Check if the schedule exists and delete it
+            schedule = Schedule.objects.filter(id=schedule_id, timeslot__batch_class=instance).first()
+            if schedule:
+                schedule.delete()
+
+                # Fetch all schedules and time slots for the class
+                remaining_schedules = Schedule.objects.filter(timeslot__batch_class=instance)
+                if not remaining_schedules:
+                    instance.delete()
+                else:
+                    # Remove time slots without schedules
+                    TimeSlot.objects.filter(batch_class=instance).exclude(
+                        id__in=remaining_schedules.values_list('timeslot_id', flat=True)
+                    ).delete()
+
                 return Response({'message': 'Offline Schedule deleted'}, status=status.HTTP_204_NO_CONTENT)
+
         return Response({'error': "Offline Schedule not found"}, status=status.HTTP_404_NOT_FOUND)
 
     def create(self, request, *args, **kwargs):
