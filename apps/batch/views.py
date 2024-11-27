@@ -30,6 +30,7 @@ from .serializers.offline_classes_serializers import OfflineClassSerializer, Joi
 from .serializers.studymaterial_serializer import StudyMaterialSerializer
 from ..payment.models import Transaction
 from ..payment.utils import final_price_with_other_expenses_and_gst
+from ..user.models import Roles
 from ..utils.functions import merge_and_sort_items
 
 User = get_user_model()
@@ -49,6 +50,17 @@ class BatchViewSet(CustomResponseMixin):
     list_serializer_class = RetrieveBatchSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('name',)
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        if user.role == Roles.INSTRUCTOR:
+            batch_ids = list(user.assign_batches.values_list('batch_id', flat=True))
+            return qs.filter(id__in=batch_ids)
+        elif user.role == Roles.MANAGER:
+            return qs
+        return qs
+
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, context={'request': request})

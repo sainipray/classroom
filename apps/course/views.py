@@ -13,6 +13,7 @@ from .filters import CourseFilter
 from .models import Category, Subcategory, Course, Folder, File, CourseFaculty
 from .serializers import CategorySerializer, SubcategorySerializer, CourseSerializer, CoursePriceUpdateSerializer, \
     ListCourseSerializer, FolderSerializer, FileSerializer, ListSubcategorySerializer
+from ..user.models import Roles
 from ..utils.functions import merge_and_sort_items
 
 User = get_user_model()
@@ -95,6 +96,16 @@ class CourseViewSet(CustomResponseMixin):
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('name',)
     filterset_class = CourseFilter
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        if user.role == Roles.INSTRUCTOR:
+            course_ids = list(user.assign_courses.values_list('course_id', flat=True))
+            return qs.filter(id__in=course_ids)
+        elif user.role == Roles.MANAGER:
+            return qs
+        return qs
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data, context={'request': request})
