@@ -1,10 +1,11 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 
-from abstract.views import CustomResponseMixin
-from .models import TestSeries, TestSeriesCategory
+from abstract.views import CustomResponseMixin, ReadOnlyCustomResponseMixin
+from .models import TestSeries, TestSeriesCategory, PhysicalProductOrder
 from .serializers import TestSeriesSerializer, TestSeriesCategorySerializer, RetrieveTestSeriesSerializer
 
 
@@ -40,3 +41,37 @@ class TestSeriesViewSet(CustomResponseMixin):
         instance = self.get_object()
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProductOrdersViewSet(ReadOnlyCustomResponseMixin):
+    queryset = PhysicalProductOrder.objects.all()
+
+    @action(detail=True, methods=['patch'], url_path='update-status')
+    def update_status(self, request, pk=None):
+        """
+        Update the delivery status of a PhysicalProductOrder.
+        """
+        try:
+            order = self.get_object()
+        except PhysicalProductOrder.DoesNotExist:
+            return Response(
+                {"error": "Order not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Validate the new status
+        new_status = request.data.get("delivery_status")
+        if new_status not in PhysicalProductOrder.DeliveryStatus.values:
+            return Response(
+                {"error": f"Invalid status. Allowed values are: {', '.join(PhysicalProductOrder.DeliveryStatus.values)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Update the delivery status
+        order.delivery_status = new_status
+        order.save()
+
+        return Response(
+            {"message": "Delivery status updated successfully.", "delivery_status": order.delivery_status},
+            status=status.HTTP_200_OK,
+        )
