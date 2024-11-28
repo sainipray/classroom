@@ -45,7 +45,7 @@ class TestSeriesViewSet(CustomResponseMixin):
 
 class ProductOrdersViewSet(ReadOnlyCustomResponseMixin):
     queryset = PhysicalProductOrder.objects.all()
-
+    serializer_class = ProductOrdersSerializer
     @action(detail=True, methods=['patch'], url_path='update-status')
     def update_status(self, request, pk=None):
         """

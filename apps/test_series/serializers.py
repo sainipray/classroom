@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import TestSeries, TestSeriesCategory
+from .models import TestSeries, TestSeriesCategory, PhysicalProductOrder
 
 
 class TestSeriesCategorySerializer(serializers.ModelSerializer):
@@ -35,4 +35,13 @@ class RetrieveTestSeriesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = TestSeries
+        fields = '__all__'
+
+
+class ProductOrdersSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.full_name')
+    test_series = RetrieveTestSeriesSerializer(read_only=True)
+
+    class Meta:
+        model = PhysicalProductOrder
         fields = '__all__'
