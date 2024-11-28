@@ -18,7 +18,7 @@ from apps.payment.models import Transaction
 from apps.payment.serializers import VerifyPaymentSerializer, TransactionSerializer, PurchaseCourseSerializer, \
     ApplyCouponSerializer, PurchaseBatchSerializer, PurchaseTestSeriesSerializer
 from apps.payment.utils import final_price_with_other_expenses_and_gst
-from apps.test_series.models import TestSeries, TestSeriesPurchaseOrder
+from apps.test_series.models import TestSeries, TestSeriesPurchaseOrder, PhysicalProductOrder
 from config.razor_payment import RazorpayService
 from config.weasy_pdf import generate_pdf
 
@@ -203,8 +203,13 @@ class GetTestSeriesPricingView(APIView):
         # Original price (assuming first installment is stored in a field called `first_installment_price`)
         original_price = test_series.effective_price or 0
 
-        # Get final pricing details including GST and other fees
-        final_price_responses = final_price_with_other_expenses_and_gst(original_price)
+        if test_series.is_digital:
+            # Get final pricing details including GST and other fees
+            final_price_responses = final_price_with_other_expenses_and_gst(original_price)
+        else:
+            # Get final pricing details including GST and other fees
+            final_price_responses = final_price_with_other_expenses_and_gst(original_price,
+                                                                            gst_percentage=test_series.gst)
 
         # Construct the response data
         response_data = {
@@ -236,11 +241,12 @@ class PurchaseTestSeriesView(APIView):
         discount_applied = 0
         price_after_coupon = None
 
-        if not test_series.is_digital:
-            final_price_responses = final_price_with_other_expenses_and_gst(
-                Decimal(original_price), gst_percentage=Decimal(test_series.physical_product.gst))
-        else:
+        if test_series.is_digital:
             final_price_responses = final_price_with_other_expenses_and_gst(Decimal(original_price))
+
+        else:
+            final_price_responses = final_price_with_other_expenses_and_gst(
+                Decimal(original_price), gst_percentage=Decimal(test_series.gst))
 
         try:
             razorpay_service = RazorpayService()
@@ -380,10 +386,15 @@ class VerifyPaymentView(APIView):
                 test_series = get_object_or_404(TestSeries, id=content_id, is_published=True)
 
                 # Create TestSeriesPurchaseOrder
-                TestSeriesPurchaseOrder.objects.create(
+                purchase_order = TestSeriesPurchaseOrder.objects.create(
                     student=request.user,
                     test_series=test_series,
                     transaction=verified_transaction
+                )
+                PhysicalProductOrder.objects.create(
+                    test_series=test_series,
+                    user=request.user,
+                    purchase_order=purchase_order
                 )
                 logger.info(
                     f"TestSeriesPurchaseOrder created for transaction {razorpay_order_id} and user {request.user.id}")

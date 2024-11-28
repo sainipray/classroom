@@ -25,11 +25,12 @@ class TestSeries(TimeStampedModel):
                                           editable=False, null=True)
     description = models.TextField(blank=True, null=True)
     thumbnail = models.CharField(max_length=255, null=True, blank=True)
-    is_digital = models.BooleanField(default=True)
+    is_digital = models.BooleanField(default=False)
     url = models.CharField(max_length=255, null=True, blank=True)
     highlights = ArrayField(models.CharField(max_length=255), blank=True, default=list)
     is_published = models.BooleanField(default=False, verbose_name="Is Published")
     created_by = models.ForeignKey(User, verbose_name="Created By", on_delete=models.CASCADE, null=True, blank=True)
+    gst = models.PositiveSmallIntegerField(default=18)
 
     def __str__(self):
         return self.name
@@ -40,22 +41,6 @@ class TestSeries(TimeStampedModel):
         else:
             self.effective_price = self.price
         super().save(**kwargs)
-
-
-class PhysicalProduct(TimeStampedModel):
-    class DeliveryStatus(models.TextChoices):
-        SHIPPED = 'shipped', 'Shipped'
-        IN_TRANSIT = 'in-transit', 'In-Transit'
-        DELIVERED = 'delivered', 'Delivered'
-        DELIVERY_PENDING = 'delivery-pending', 'Delivery Pending'
-
-    test_series = models.OneToOneField(TestSeries, on_delete=models.CASCADE, related_name='physical_product')
-    delivery_status = models.CharField(
-        max_length=20,
-        choices=DeliveryStatus.choices,
-        default=DeliveryStatus.DELIVERY_PENDING,
-    )
-    gst = models.PositiveSmallIntegerField(default=18)
 
 
 # class TestSeriesStudentAddress(TimeStampedModel):
@@ -83,3 +68,23 @@ class TestSeriesPurchaseOrder(TimeStampedModel):
 
     def __str__(self):
         return f"TestSeriesPurchaseOrder {self.id} - {self.test_series.name}"
+
+
+class PhysicalProductOrder(TimeStampedModel):
+    class DeliveryStatus(models.TextChoices):
+        SHIPPED = 'shipped', 'Shipped'
+        IN_TRANSIT = 'in-transit', 'In-Transit'
+        DELIVERED = 'delivered', 'Delivered'
+        DELIVERY_PENDING = 'delivery-pending', 'Delivery Pending'
+
+    test_series = models.ForeignKey(TestSeries, on_delete=models.CASCADE, related_name='physical_product')
+    delivery_status = models.CharField(
+        max_length=20,
+        choices=DeliveryStatus.choices,
+        default=DeliveryStatus.DELIVERY_PENDING,
+    )
+    order_date = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='physical_product_orders')
+    # TODO remove null and blank
+    purchase_order = models.OneToOneField(TestSeriesPurchaseOrder, on_delete=models.CASCADE,
+                                          related_name='physical_product_order', null=True, blank=True)
