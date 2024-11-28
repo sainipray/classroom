@@ -6,7 +6,8 @@ from rest_framework.response import Response
 
 from abstract.views import CustomResponseMixin, ReadOnlyCustomResponseMixin
 from .models import TestSeries, TestSeriesCategory, PhysicalProductOrder
-from .serializers import TestSeriesSerializer, TestSeriesCategorySerializer, RetrieveTestSeriesSerializer
+from .serializers import TestSeriesSerializer, TestSeriesCategorySerializer, RetrieveTestSeriesSerializer, \
+    ProductOrdersSerializer
 
 
 class TestSeriesCategoryViewSet(CustomResponseMixin):
