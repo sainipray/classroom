@@ -73,6 +73,24 @@ class LoginSerializer(serializers.Serializer):
         return value
 
 
+class ResendOTPSerializer(serializers.Serializer):
+    reference_key = serializers.CharField()
+
+    def validate(self, attrs):
+        reference_key = attrs["reference_key"]
+        otp_manager = OTPManager()
+        try:
+            phone_number = otp_manager.validate_token(reference_key)
+        except Exception as e:
+            raise ValidationError("Invalid Details, Please login again")
+        try:
+            user = CustomUser.objects.get(phone_number=phone_number)
+            attrs['user'] = user
+        except CustomUser.DoesNotExist:
+            raise ValidationError("User with this phone number does not exist.")
+        return attrs
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser

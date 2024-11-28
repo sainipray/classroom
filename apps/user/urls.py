@@ -9,7 +9,7 @@ from .views import (
     LoginAPIView,
     PhoneOTPVerifyAPIView,
     RegisterAPIView,
-    UserProfileAPIView, StudentViewSet, UserViewSet, PermissionView, PermissionsForRoles,
+    UserProfileAPIView, StudentViewSet, UserViewSet, PermissionView, PermissionsForRoles, ResendOTPAPIView,
 )
 
 router = DefaultRouter()
@@ -27,7 +27,8 @@ urlpatterns = [
     path("profile/", UserProfileAPIView.as_view(), name="profile"),
     path("user-permissions/", PermissionView.as_view(), name="user_permissions"),
     path("roles-permissions/", PermissionsForRoles.as_view(), name="roles_permissions"),
-    
+    path("resend-otp/", ResendOTPAPIView.as_view(), name="resend_otp"),
+
     # path('users/<int:pk>/', UserUpdateView.as_view(), name='user-update'),
 ]
 

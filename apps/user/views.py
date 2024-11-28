@@ -2,7 +2,7 @@
 
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import generics, status, viewsets
+from rest_framework import generics, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
@@ -23,7 +23,7 @@ from .serializers import (
     LoginSerializer,
     SignupSerializer,
     UserProfileSerializer,
-    VerifyOTPSerializer, CustomUserSerializer, StudentSerializer, StudentUserSerializer,
+    VerifyOTPSerializer, CustomUserSerializer, StudentSerializer, StudentUserSerializer, ResendOTPSerializer,
 )
 
 
@@ -92,6 +92,25 @@ class PhoneOTPVerifyAPIView(generics.GenericAPIView):
         data["role"] = user.role
         # data["user"] = self.get_user_serializer_data(user)
         return Response(data)
+
+
+class ResendOTPAPIView(BaseSendOTPAPIView):
+    permission_classes = (AllowAny,)
+    serializer_class = ResendOTPSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        data = {"user": user, "phone_number": user.phone_number}
+        reference_key = self.send_otp(data, LOGIN_OTP_KEY)
+        return Response(
+            {
+                "message": "OTP resent to your phone number",
+                "reference_key": reference_key,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class LoginAPIView(BaseSendOTPAPIView):
