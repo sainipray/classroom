@@ -373,3 +373,51 @@ class CoursePurchaseOrder(TimeStampedModel):
 
     class Meta:
         ordering = ('-created',)
+
+class CourseLiveClass(TimeStampedModel):
+    course = models.ForeignKey(Course, related_name="live_classes", on_delete=models.CASCADE, verbose_name="Course")
+    title = models.CharField(max_length=255, verbose_name="Class Title")
+    host_link = models.URLField(verbose_name="Live Class host_link", null=True, blank=True)
+    common_host_link = models.URLField(verbose_name="Live Class commonHostLink", null=True, blank=True)
+    common_moderator_link = models.URLField(verbose_name="Live Class commonModeratorLink", null=True, blank=True)
+    common_participant_link = models.URLField(verbose_name="Live Class commonParticipantLink", null=True, blank=True)
+    date = models.DateTimeField(verbose_name="Class Date", null=True, blank=True)
+    is_recorded = models.BooleanField(default=False, verbose_name="Is Recorded")
+    class_id = models.CharField(max_length=255, verbose_name="Class ID", null=True, blank=True)
+    status = models.CharField(max_length=255, verbose_name="Status", null=True, blank=True)
+    recording_url = models.URLField(verbose_name="Recording URL", null=True, blank=True)
+    duration = models.IntegerField(verbose_name="Duration", null=True, blank=True)
+    recording_status = models.CharField(max_length=255, verbose_name="Recording Status", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Live Class"
+        verbose_name_plural = "Live Classes"
+        ordering = ('-date',)
+
+    def __str__(self):
+        return f"Live Class for {self.course} on {self.date}"
+
+    @property
+    def student_join_link(self):
+        return self.course_attendance.live_class_link
+
+
+class CourseAttendance(TimeStampedModel):
+    student = models.ForeignKey(User, related_name="course_attendances", on_delete=models.CASCADE)
+    live_class = models.OneToOneField(CourseLiveClass, related_name="course_attendance", on_delete=models.CASCADE)
+    attended = models.BooleanField(default=False, verbose_name="Attended")
+    analytics = models.JSONField(verbose_name="Analytics", null=True, blank=True)
+    browser = models.JSONField(max_length=255, verbose_name="Browser", null=True, blank=True)
+    ip = models.CharField(max_length=255, verbose_name="IP", null=True, blank=True)
+    os = models.JSONField(max_length=255, verbose_name="OS", null=True, blank=True)
+    start_time = models.DateTimeField(verbose_name="Start Time", null=True, blank=True)
+    total_time = models.IntegerField(verbose_name="Total Time", null=True, blank=True)
+    live_class_link = models.URLField(verbose_name="Live class Joining Link ", null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Course Attendance"
+        verbose_name_plural = "Course Attendances"
+        ordering = ('-created',)
+
+    def __str__(self):
+        return f"{self.student} - {self.live_class} - {'Present' if self.attended else 'Absent'}"

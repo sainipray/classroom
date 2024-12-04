@@ -83,7 +83,7 @@ class MeritHubAPI:
         return response.json()
 
     # Classes
-    def schedule_class(self, user_id, class_data, batch):
+    def schedule_class(self, user_id, class_data):
         """Schedule a class for the Instructor."""
         user = User.objects.get(id=user_id)
         if not user.merit_user_id:
@@ -102,17 +102,7 @@ class MeritHubAPI:
         response = requests.post(url, json=class_data, headers=headers)
         response.raise_for_status()
         data = response.json()
-        live_class = LiveClass.objects.create(
-            batch=batch,
-            title=class_data['title'],
-            class_id=data['classId'],
-            date=class_data['startTime'],
-            host_link=self.generate_url(data['hostLink']),
-            common_host_link=self.generate_url(data['commonLinks']['commonHostLink']),
-            common_moderator_link=self.generate_url(data['commonLinks']['commonModeratorLink']),
-            common_participant_link=self.generate_url(data['commonLinks']['commonParticipantLink'])
-        )
-        return live_class
+        return data
 
     def add_students_to_class(self, class_id, users):
         """Add students to a scheduled class."""

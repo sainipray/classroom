@@ -1,7 +1,7 @@
 # serializers.py
 from rest_framework import serializers
 
-from .models import Course, CourseValidityPeriod
+from .models import Course, CourseValidityPeriod, CourseLiveClass
 
 
 class StudentCourseValidityPeriodSerializer(serializers.ModelSerializer):
@@ -27,3 +27,13 @@ class RetrieveStudentCourseSerializer(StudentCourseSerializer):
     class Meta:
         model = Course
         fields = '__all__'
+
+
+class StudentCourseLiveClassSerializer(serializers.ModelSerializer):
+    student_join_link = serializers.ReadOnlyField()
+
+    class Meta:
+        model = CourseLiveClass
+        fields = ('title', 'date', 'class_id', 'status', 'recording_url',
+                  'duration', 'recording_status', 'student_join_link')
+

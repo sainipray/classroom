@@ -276,10 +276,19 @@ class CreateLiveClassView(APIView):
             'participantControl': validated_data['participantControl']
         }
         try:
-            live_class = api.schedule_class(
+            data = api.schedule_class(
                 user_id=self.request.user.id,
                 class_data=class_data,
-                batch=batch
+            )
+            live_class = LiveClass.objects.create(
+                batch=batch,
+                title=class_data['title'],
+                class_id=data['classId'],
+                date=class_data['startTime'],
+                host_link=api.generate_url(data['hostLink']),
+                common_host_link=api.generate_url(data['commonLinks']['commonHostLink']),
+                common_moderator_link=api.generate_url(data['commonLinks']['commonModeratorLink']),
+                common_participant_link=api.generate_url(data['commonLinks']['commonParticipantLink'])
             )
             enrolled_students = Enrollment.objects.filter(batch=batch, is_approved=True)
             students = []

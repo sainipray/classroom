@@ -1,18 +1,23 @@
+from constance import config
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from abstract.views import CustomResponseMixin
+from config.live_video import MeritHubAPI
 from .filters import CourseFilter
-from .models import Category, Subcategory, Course, Folder, File, CourseFaculty
+from .models import Category, Subcategory, Course, Folder, File, CourseFaculty, CourseLiveClass, CoursePurchaseOrder, \
+    CourseAttendance
 from .serializers import CategorySerializer, SubcategorySerializer, CourseSerializer, CoursePriceUpdateSerializer, \
-    ListCourseSerializer, FolderSerializer, FileSerializer, ListSubcategorySerializer
+    ListCourseSerializer, FolderSerializer, FileSerializer, ListSubcategorySerializer, CreateCourseLiveClassSerializer, \
+    RetrieveCourseLiveClassSerializer
 from ..user.models import Roles
 from ..utils.functions import merge_and_sort_items
 
@@ -93,6 +98,7 @@ class CourseViewSet(CustomResponseMixin):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     list_serializer_class = ListCourseSerializer
+    retrieve_serializer_class = ListCourseSerializer
     filter_backends = (DjangoFilterBackend, SearchFilter)
     search_fields = ('name',)
     filterset_class = CourseFilter
@@ -291,3 +297,99 @@ class FolderFileViewSet(viewsets.ViewSet):
         file.is_locked = not file.is_locked  # Toggle the lock status
         file.save()
         return Response({'status': 'Lock status toggled', 'is_locked': file.is_locked}, status=status.HTTP_200_OK)
+
+
+class CreateCourseLiveClassView(APIView):
+
+    def post(self, request):
+        serializer = CreateCourseLiveClassSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # Extract validated data
+        validated_data = serializer.validated_data
+        course = validated_data['course']
+
+        # Assuming you have configured your client ID and secret key in settings
+        client_id = config.MERITHUB_CLIENT_ID
+        secret_key = config.MERITHUB_CLIENT_SECRET
+        api = MeritHubAPI(client_id, secret_key)
+
+        # Prepare the class data
+        class_data = {
+            'title': validated_data['title'],
+            'startTime': validated_data['startTime'],
+            'endDate': validated_data['endDate'],
+            'duration': validated_data['duration'],
+            'lang': validated_data['lang'],
+            'timeZoneId': validated_data['timeZoneId'],
+            'description': validated_data['description'],
+            'type': validated_data['type'],
+            'access': validated_data['access'],
+            'login': validated_data['login'],
+            'layout': validated_data['layout'],
+            'status': validated_data['status'],
+            'recording': validated_data['recording'],
+            'participantControl': validated_data['participantControl']
+        }
+        try:
+            data = api.schedule_class(
+                user_id=self.request.user.id,
+                class_data=class_data,
+            )
+            live_class = CourseLiveClass.objects.create(
+                course=course,
+                title=class_data['title'],
+                class_id=data['classId'],
+                date=class_data['startTime'],
+                host_link=api.generate_url(data['hostLink']),
+                common_host_link=api.generate_url(data['commonLinks']['commonHostLink']),
+                common_moderator_link=api.generate_url(data['commonLinks']['commonModeratorLink']),
+                common_participant_link=api.generate_url(data['commonLinks']['commonParticipantLink'])
+            )
+            enrolled_students = CoursePurchaseOrder.objects.filter(course=course, is_paid=True)
+            students = []
+            for order in enrolled_students:
+                user = order.student
+                if not user.merit_user_id:
+                    response = api.create_user({
+                        'name': user.full_name,
+                        'email': user.email,
+                        'clientUserId': str(user.id),
+                        "role": "M",
+                        "timeZone": "Asia/Kolkata",
+                        "permission": "CJ"
+                    })
+                    user.merit_user_id = response['userId']
+                    user.save()
+                common_participant_link = live_class.common_participant_link
+                user_link = ""
+                if common_participant_link:
+                    user_link = common_participant_link.split('/')[-1]
+                students.append({
+                    "userId": user.merit_user_id,
+                    "userLink": user_link,
+                    "userType": "su"
+                })
+            # Now add users in live class
+            response = api.add_students_to_class(class_id=live_class.class_id, users=students)
+            for student in response:
+                try:
+                    user = User.objects.get(merit_user_id=student['userId'])
+                    live_class_link = api.generate_url(student['userLink'])
+                    CourseAttendance.objects.create(student=user, live_class=live_class,
+                                                    live_class_link=live_class_link)
+                except User.DoesNotExist:
+                    print(f"User {student['userId']}")
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            # Serialize the created class (assuming you have a serializer for this)
+        retrieve_serializer = RetrieveCourseLiveClassSerializer(instance=live_class)
+        return Response(retrieve_serializer.data, status=status.HTTP_201_CREATED)
+
+
+class CourseLiveClassViewSet(mixins.DestroyModelMixin,
+                             GenericViewSet):
+    queryset = CourseLiveClass.objects.all()
+    serializer_class = RetrieveCourseLiveClassSerializer

@@ -83,6 +83,7 @@ class PhysicalProductOrder(TimeStampedModel):
         choices=DeliveryStatus.choices,
         default=DeliveryStatus.DELIVERY_PENDING,
     )
+    awb_no = models.CharField(max_length=100, null=True, blank=True)
     order_date = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='physical_product_orders')
     # TODO remove null and blank

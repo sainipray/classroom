@@ -1,8 +1,11 @@
+from datetime import timedelta
+
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 from rest_framework import serializers
 
 from .models import Category, Subcategory, Course, CourseCategorySubCategory, Folder, File, CourseFaculty, \
-    CourseValidityPeriod
+    CourseValidityPeriod, CourseLiveClass
 
 User = get_user_model()
 
@@ -190,7 +193,85 @@ class ListCourseSerializer(serializers.ModelSerializer):
     faculties = CourseFacultySerializer(source='course_faculties', many=True, read_only=True)
     validity_periods = CourseValidityPeriodSerializer(many=True, read_only=True)
     total_enrolled_students = serializers.ReadOnlyField()
+    live_classes = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
         fields = '__all__'
+
+    def get_live_classes(self, obj):
+        # Filter live classes where `date + 1 hour` is in the future
+        one_hour_ahead = timezone.now() - timedelta(hours=1)
+        filtered_live_classes = obj.live_classes.filter(date__gt=one_hour_ahead)
+
+        # Serialize the filtered queryset
+        return RetrieveCourseLiveClassSerializer(filtered_live_classes, many=True).data
+
+
+class CreateCourseLiveClassSerializer(serializers.Serializer):
+    course = serializers.IntegerField()
+    title = serializers.CharField(required=True, max_length=255)
+    start_time = serializers.DateTimeField(required=False, allow_null=True)
+    description = serializers.CharField(required=False, allow_blank=True, default="This is a scheduled class.")
+    enable_recording = serializers.BooleanField(required=False, default=False)
+
+    def validate_course(self, value):
+        try:
+            course = Course.objects.get(id=value)
+            return course
+        except Course.DoesNotExist:
+            raise serializers.ValidationError("Course with id {} does not exist".format(value))
+
+    def validate(self, data):
+        now = timezone.now()
+        start_time = data.get('start_time')
+        course = data['course']
+        if not course.total_enrolled_students:
+            raise serializers.ValidationError("No student is purchased in this course")
+
+        # Determine status and validate start_time
+        if start_time:
+            if start_time <= now:
+                raise serializers.ValidationError({"start_time": "start_time must be a future date and time."})
+            data['status'] = 'up'  # Upcoming
+            data['startTime'] = start_time.isoformat()
+        else:
+            data['status'] = 'lv'  # Live
+            data['startTime'] = now.isoformat()
+
+        # Set endDate to one hour after startTime
+        end_time = datetime.fromisoformat(data['startTime']) + timedelta(hours=1)
+        data['endDate'] = end_time.isoformat()
+
+        # Set default values
+        data['type'] = 'oneTime'
+        data['layout'] = 'CR'
+        data['duration'] = 60  # Duration in minutes
+        data['lang'] = 'en'
+        data['timeZoneId'] = 'Asia/Kolkata'
+        data['access'] = 'private'
+        data['login'] = False  # Adjust if needed
+
+        # Set recording options
+        data['recording'] = {
+            'record': data.get('enable_recording', False),
+            'autoRecord': False,
+            'recordingControl': True
+        }
+
+        # Participant control default settings
+        data['participantControl'] = {
+            'write': False,
+            'audio': False,
+            'video': False
+        }
+
+        return data
+
+
+class RetrieveCourseLiveClassSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CourseLiveClass
+        fields = '__all__'
+

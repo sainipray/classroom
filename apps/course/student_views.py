@@ -1,9 +1,11 @@
 # views.py
+from rest_framework import mixins
+from rest_framework.viewsets import GenericViewSet
 
 from abstract.views import ReadOnlyCustomResponseMixin
-from .models import Course, CoursePurchaseOrder
+from .models import Course, CoursePurchaseOrder, CourseLiveClass
 from .student_serializers import RetrieveStudentCourseSerializer, \
-    StudentCourseSerializer
+    StudentCourseSerializer, StudentCourseLiveClassSerializer
 
 
 class AvailableCourseViewSet(ReadOnlyCustomResponseMixin):
@@ -35,3 +37,15 @@ class PurchasedCourseCourseViewSet(ReadOnlyCustomResponseMixin):
                 student=self.request.user
             ).values_list('course_id', flat=True)
         ).filter(is_published=True)
+
+
+class StudentCourseLiveClassesViewSet(mixins.ListModelMixin,
+                                      GenericViewSet):
+    serializer_class = StudentCourseLiveClassSerializer
+    queryset = CourseLiveClass.objects.all()
+
+    def get_queryset(self):
+        # TODO check current user have course access
+        course = Course.objects.get(id=self.kwargs['course'])
+        live_classes = course.live_classes.all()
+        return live_classes

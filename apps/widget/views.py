@@ -76,6 +76,7 @@ class GlobalMetricsView(views.APIView):
         total_instructor = CustomUser.objects.filter(role=Roles.INSTRUCTOR).count()
         courses_serializer = ListCourseSerializer(trending_courses, many=True)
         batches_serializer = ListBatchSerializer(trending_batches, many=True)
+
         # Prepare the response data
         response_data = {
             "total_students": total_students,

@@ -31,6 +31,7 @@ urlpatterns = [
     path('student/join-batch/', StudentJoinBatchView.as_view(), name='join_batch'),
     path('student/batch-classes/', StudentBatchClassesView.as_view(), name='batch_classes'),
 
+
     # Student URL
     path('student/<str:batch>/batches-live-classes/', StudentLiveClassesViewSet.as_view({'get': 'list'}),
          name='live_classes_batches'),
