@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "drf_yasg",
     "corsheaders",
     "django_filters",
+    "push_notifications",
 ]
 
 PROJECT_APPS = [
@@ -280,9 +281,6 @@ SPECTACULAR_SETTINGS = {
     # 'SERVE_PERMISSIONS': ['rest_framework.permissions.IsAuthenticated'],
 }
 
-PUSH_NOTIFICATIONS_SETTINGS = {
-    "FCM_API_KEY": "",
-}
 
 PHONENUMBER_DEFAULT_REGION = 'IN'
 # Ensure that phone number format adheres to the default region
@@ -302,3 +300,10 @@ SWAGGER_SETTINGS = {
     # 'DEFAULT_AUTO_SCHEMA_CLASS': 'drf_yasg.openapi.AutoSchema',
 }
 WEBHOOK_LOG_FOLDER = Path.joinpath(BASE_DIR, 'webhook_log')
+
+
+PUSH_NOTIFICATIONS_SETTINGS = {
+    "FCM_API_KEY": "your-firebase-server-key",
+    "GCM_API_KEY": "your-gcm-server-key",
+    "APNS_CERTIFICATE": "/path/to/your/certificate.pem",
+}

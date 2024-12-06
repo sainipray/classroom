@@ -40,9 +40,8 @@ class SignupSerializer(serializers.ModelSerializer):
 class VerifyOTPSerializer(serializers.Serializer):
     otp = serializers.CharField()
     reference_key = serializers.CharField()
-
-    # push_notification_token = serializers.CharField(required=False)
-    # device_id = serializers.CharField(required=False)
+    registration_id = serializers.CharField(required=False)
+    device_id = serializers.CharField(required=False)
 
     def validate(self, attrs):
         otp = attrs["otp"]

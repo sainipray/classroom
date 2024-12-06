@@ -2,6 +2,7 @@
 
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
+from push_notifications.models import GCMDevice
 from rest_framework import generics, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
@@ -69,21 +70,26 @@ class PhoneOTPVerifyAPIView(generics.GenericAPIView):
         )
         serializer.is_valid(raise_exception=True)
         phone_number = serializer.validated_data["phone_number"]
-        # push_notification_token = serializer.validated_data.get("push_notification_token")
-        # device_id = serializer.validated_data.get("device_id")
-        # remove existing device with same device_id
         user = CustomUser.objects.get(phone_number=phone_number)
         user.is_active = True
         user.last_login = timezone.now()
         user.save()
-        # if push_notification_token and device_id:
-        #     GCMDevice.objects.filter(name=device_id).delete()
-        #     GCMDevice.objects.create(
-        #         registration_id=push_notification_token,
-        #         name=device_id,
-        #         cloud_message_type="FCM",
-        #         user=user,
-        #     )
+
+        token = serializer.validated_data.get('registration_id')
+        device_id = serializer.validated_data.get("device_id")
+
+        if token and device_id:
+            # Deactivate or delete any existing device for the user
+            GCMDevice.objects.filter(user=user).delete()
+
+            # Register the new device
+            device = GCMDevice.objects.create(
+                user=user,
+                registration_id=token,
+                name=f"{user.full_name}'s Device",
+                active=True
+            )
+
         data = {}
         refresh = RefreshToken.for_user(user)
         data["refresh"] = str(refresh)
