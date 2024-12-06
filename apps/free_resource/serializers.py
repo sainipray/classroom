@@ -28,7 +28,7 @@ class FreeResourceSerializer(serializers.ModelSerializer):
 class FolderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Folder
-        fields = ['id', 'resource', 'title', 'parent', 'created']
+        fields = ['id', 'resource', 'title', 'parent', 'created', 'order']
 
 
 class FileSerializer(serializers.ModelSerializer):
@@ -36,4 +36,4 @@ class FileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ['id', 'title', 'folder', 'url', 'created', 'is_locked']
+        fields = ['id', 'title', 'folder', 'url', 'created', 'is_locked', 'order']

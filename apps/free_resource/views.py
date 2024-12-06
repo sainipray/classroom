@@ -36,11 +36,11 @@ class FreeResourceViewSet(CustomResponseMixin):
                 return Response({'detail': 'Folder not found.'}, status=status.HTTP_404_NOT_FOUND)
 
             # Get files (files) of the current folder
-            files = File.objects.filter(folder=folder).order_by('created')
+            files = File.objects.filter(folder=folder).order_by('order')
             file_serializer = FileSerializer(files, many=True)
 
             # Get immediate subfolders
-            subfolders = Folder.objects.filter(parent=folder).order_by('created')
+            subfolders = Folder.objects.filter(parent=folder).order_by('order')
             subfolder_serializer = FolderSerializer(subfolders, many=True)
 
             # Use the utility function to merge and sort
@@ -57,10 +57,10 @@ class FreeResourceViewSet(CustomResponseMixin):
             root_folder, _ = Folder.objects.get_or_create(resource=resource, parent__isnull=True, title='Home')
 
             # Get files (files) of the current folder
-            file_serializer = FileSerializer(root_folder.files.all(), many=True)
+            file_serializer = FileSerializer(root_folder.files.all().order_by('order'), many=True)
 
             # Get immediate subfolders
-            subfolder_serializer = FolderSerializer(root_folder.folders.all(), many=True)
+            subfolder_serializer = FolderSerializer(root_folder.folders.all().order_by('order'), many=True)
 
             # Use the utility function to merge and sort
             merged_structure = merge_and_sort_items(subfolder_serializer.data, file_serializer.data)
@@ -142,3 +142,31 @@ class FolderFileViewSet(viewsets.ViewSet):
         file.delete()  # Delete the file
         return Response({'status': 'File deleted'}, status=status.HTTP_204_NO_CONTENT)
 
+
+
+    # 7. Update order of folder or file (based on type)
+    @action(detail=True, methods=['patch'], url_path='update-order')
+    def update_order(self, request, pk=None):
+        # Extract the 'type' (folder or file) and the 'id' and 'order'
+        item_type = request.data.get('type')  # 'folder' or 'file'
+        item_id = request.data.get('id')
+        new_order = request.data.get('order')
+
+        if not item_type or not item_id or new_order is None:
+            return Response({'error': 'Type, id, and order are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get the course
+        resource = self.get_resource(pk)
+
+        if item_type == 'folder':
+            item = get_object_or_404(Folder, id=item_id, resource=resource)
+        elif item_type == 'file':
+            item = get_object_or_404(File, id=item_id, folder__resource=resource)
+        else:
+            return Response({'error': 'Invalid type. Should be "folder" or "file".'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update the order
+        item.order = new_order
+        item.save()
+
+        return Response({'status': f'{item_type.capitalize()} order updated', 'order': item.order}, status=status.HTTP_200_OK)

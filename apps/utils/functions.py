@@ -8,7 +8,8 @@ def merge_and_sort_items(folders, files):
             'title': folder['title'],
             'type': 'folder',
             'parent_id': folder.get('parent'),  # Use parent ID if available
-            'created': folder['created']
+            'created': folder['created'],
+            'order': folder['order']
         })
 
     # Append contents to merged structure
@@ -20,8 +21,9 @@ def merge_and_sort_items(folders, files):
             'url': file['url'],
             'is_locked': file['is_locked'],
             'folder_id': file['folder'],  # Link to folder ID
-            'created': file['created']
+            'created': file['created'],
+            'order': file['order']
         })
 
     # Sort by 'created' date
-    return sorted(merged_structure, key=lambda x: x['created'])
+    return sorted(merged_structure, key=lambda x: x['order'])

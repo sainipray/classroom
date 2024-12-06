@@ -207,12 +207,13 @@ class Folder(TimeStampedModel):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='folders')
     batch = models.ForeignKey(Batch, related_name="folders", on_delete=models.CASCADE)
     title = models.CharField(max_length=255, verbose_name="Folder Title")
+    order = models.PositiveIntegerField(default=0, verbose_name="Order")  # Field to handle the order
 
     def __str__(self):
         return self.title
 
     class Meta:
-        ordering = ('-created',)
+        ordering = ('order', '-created')
 
 
 class File(TimeStampedModel):
@@ -220,12 +221,13 @@ class File(TimeStampedModel):
     title = models.CharField(max_length=255, verbose_name="Batch Title")
     url = models.FileField(upload_to='videos/', verbose_name="Batch File URL")
     is_locked = models.BooleanField(default=False, verbose_name="Is Locked")
+    order = models.PositiveIntegerField(default=0, verbose_name="Order")  # Field to handle the order
 
     def __str__(self):
         return self.title
 
     class Meta:
-        ordering = ('-created',)
+        ordering = ('order', '-created')
 
     def save(self, **kwargs):
         # Automatically set the title from the document file name, if title is empty

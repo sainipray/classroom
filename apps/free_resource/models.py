@@ -28,6 +28,7 @@ class FreeResource(TimeStampedModel):
             folder_data = {
                 'id': folder.id,
                 'title': folder.title,
+                'order': folder.order,
                 'files': [],
                 'subfolders': []
             }
@@ -50,18 +51,19 @@ class FreeResource(TimeStampedModel):
                     'id': file.id,
                     'title': file.title,
                     'url': file.url.url,  # URL to access the file
-                    'is_locked': file.is_locked
+                    'is_locked': file.is_locked,
+                    'order': file.order
                 })
 
             # Recursively fetch subfolders
-            for subfolder in folder.folders.all():
+            for subfolder in folder.folders.all().order_by('order'):
                 folder_data['subfolders'].append(fetch_folder_structure(subfolder))
 
             return folder_data
 
         folder_structure = []
         # Start from top-level folders (where parent is None)
-        for folder in self.folders.filter(parent__isnull=True):
+        for folder in self.folders.filter(parent__isnull=True).order_by('order'):
             folder_structure.append(fetch_folder_structure(folder))
 
         # Prepare the final data with directory structure and counts
@@ -79,12 +81,13 @@ class Folder(TimeStampedModel):
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='folders')
     resource = models.ForeignKey(FreeResource, related_name="folders", on_delete=models.CASCADE)
     title = models.CharField(max_length=255, verbose_name="Folder Title")
+    order = models.PositiveIntegerField(default=0, verbose_name="Order")  # Field to handle the order
 
     def __str__(self):
         return self.title
 
     class Meta:
-        ordering = ('-created',)
+        ordering = ('order', '-created')
 
 
 class File(TimeStampedModel):
@@ -92,12 +95,13 @@ class File(TimeStampedModel):
     title = models.CharField(max_length=255, verbose_name="Lecture Title")
     url = models.FileField(upload_to='videos/', verbose_name="Lecture Video")
     is_locked = models.BooleanField(default=False, verbose_name="Is Locked")
+    order = models.PositiveIntegerField(default=0, verbose_name="Order")  # Field to handle the order
 
     def __str__(self):
         return self.title
 
     class Meta:
-        ordering = ('-created',)
+        ordering = ('order', '-created')
 
     def save(self, **kwargs):
         # Automatically set the title from the document file name, if title is empty
