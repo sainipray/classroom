@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime, time
 
 from dateutil.relativedelta import relativedelta
 from django.db.models import Sum
@@ -183,8 +183,11 @@ class StudentBatchClassesView(AbstractBatchStudentView, APIView):
         main_live_classes = []
         main_offline_classes = []
         for batch in self.get_purchased_batches():
-            current_date = timezone.now()
-            live_classes = batch.live_classes.filter(date__gte=current_date)
+            # Get the current date in the local timezone
+            current_date = timezone.localtime(timezone.now()).date()
+            # Get today's midnight in the local timezone
+            today_midnight = timezone.make_aware(datetime.combine(current_date, time.min))
+            live_classes = batch.live_classes.filter(date__gte=today_midnight)
             live_classes_data = StudentLiveClassSerializer(live_classes, many=True).data
             offline_class = generate_offline_classes(batch)
 
