@@ -44,7 +44,7 @@ class TestSeriesViewSet(CustomResponseMixin):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class ProductOrdersViewSet(ReadOnlyCustomResponseMixin):
+class ProductOrdersViewSet(CustomResponseMixin):
     queryset = PhysicalProductOrder.objects.all()
     serializer_class = ProductOrdersSerializer
     @action(detail=True, methods=['patch'], url_path='update-status')

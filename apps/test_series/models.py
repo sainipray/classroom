@@ -72,18 +72,23 @@ class TestSeriesPurchaseOrder(TimeStampedModel):
 
 class PhysicalProductOrder(TimeStampedModel):
     class DeliveryStatus(models.TextChoices):
+        ORDER_PLACED = 'order-placed', 'Order Placed'
+        PACKED = 'packed', 'Packed'
         SHIPPED = 'shipped', 'Shipped'
-        IN_TRANSIT = 'in-transit', 'In-Transit'
         DELIVERED = 'delivered', 'Delivered'
-        DELIVERY_PENDING = 'delivery-pending', 'Delivery Pending'
+        CANCELED = 'canceled', 'Canceled'
+        IN_TRANSIT = 'in-transit', 'In-Transit'
+
 
     test_series = models.ForeignKey(TestSeries, on_delete=models.CASCADE, related_name='physical_product')
     delivery_status = models.CharField(
         max_length=20,
         choices=DeliveryStatus.choices,
-        default=DeliveryStatus.DELIVERY_PENDING,
+        default=DeliveryStatus.ORDER_PLACED,
     )
     awb_no = models.CharField(max_length=100, null=True, blank=True)
+    tracking_no = models.CharField(max_length=100, null=True, blank=True)
+    tracking_url = models.CharField(max_length=255, null=True, blank=True)
     order_date = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='physical_product_orders')
     # TODO remove null and blank
