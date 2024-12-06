@@ -142,31 +142,46 @@ class FolderFileViewSet(viewsets.ViewSet):
         file.delete()  # Delete the file
         return Response({'status': 'File deleted'}, status=status.HTTP_204_NO_CONTENT)
 
-
-
-    # 7. Update order of folder or file (based on type)
     @action(detail=True, methods=['patch'], url_path='update-order')
     def update_order(self, request, pk=None):
-        # Extract the 'type' (folder or file) and the 'id' and 'order'
+        # Extract the 'type' (folder or file), 'id', 'order', and 'swap_with_id'
         item_type = request.data.get('type')  # 'folder' or 'file'
         item_id = request.data.get('id')
         new_order = request.data.get('order')
+        swap_with_id = request.data.get('swap_with_id')
+        swap_with_type = request.data.get('swap_with_type')  # 'folder' or 'file'
 
-        if not item_type or not item_id or new_order is None:
-            return Response({'error': 'Type, id, and order are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not item_type or not item_id or new_order is None or not swap_with_id or not swap_with_type:
+            return Response({'error': 'Type, id, order, swap_with_id, and swap_with_type are required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # Get the course
         resource = self.get_resource(pk)
 
+        # Fetch the item being moved
         if item_type == 'folder':
             item = get_object_or_404(Folder, id=item_id, resource=resource)
         elif item_type == 'file':
             item = get_object_or_404(File, id=item_id, folder__resource=resource)
         else:
-            return Response({'error': 'Invalid type. Should be "folder" or "file".'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'Invalid type. Should be "folder" or "file".'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        # Update the order
-        item.order = new_order
+        # Fetch the item to swap with
+        if swap_with_type == 'folder':
+            swap_item = get_object_or_404(Folder, id=swap_with_id, resource=resource)
+        elif swap_with_type == 'file':
+            swap_item = get_object_or_404(File, id=swap_with_id, folder__resource=resource)
+        else:
+            return Response({'error': 'Invalid swap_with_type. Should be "folder" or "file".'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        # Swap the orders
+        item.order, swap_item.order = swap_item.order, item.order
+
+        # Save both items
         item.save()
+        swap_item.save()
 
-        return Response({'status': f'{item_type.capitalize()} order updated', 'order': item.order}, status=status.HTTP_200_OK)
+        # Return only a status message without orders
+        return Response({'message': f'{item_type.capitalize()} orders updated successfully'}, status=status.HTTP_200_OK)

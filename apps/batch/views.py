@@ -557,17 +557,21 @@ class FolderFileViewSet(viewsets.ViewSet):
     # 8. Update order of folder or file (based on type)
     @action(detail=True, methods=['patch'], url_path='update-order')
     def update_order(self, request, pk=None):
-        # Extract the 'type' (folder or file) and the 'id' and 'order'
+        # Extract the 'type' (folder or file), 'id', 'order', and 'swap_with_id'
         item_type = request.data.get('type')  # 'folder' or 'file'
         item_id = request.data.get('id')
         new_order = request.data.get('order')
+        swap_with_id = request.data.get('swap_with_id')
+        swap_with_type = request.data.get('swap_with_type')  # 'folder' or 'file'
 
-        if not item_type or not item_id or new_order is None:
-            return Response({'error': 'Type, id, and order are required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not item_type or not item_id or new_order is None or not swap_with_id or not swap_with_type:
+            return Response({'error': 'Type, id, order, swap_with_id, and swap_with_type are required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # Get the course
         batch = self.get_batch(pk)
 
+        # Fetch the item being moved
         if item_type == 'folder':
             item = get_object_or_404(Folder, id=item_id, batch=batch)
         elif item_type == 'file':
@@ -576,12 +580,24 @@ class FolderFileViewSet(viewsets.ViewSet):
             return Response({'error': 'Invalid type. Should be "folder" or "file".'},
                             status=status.HTTP_400_BAD_REQUEST)
 
-        # Update the order
-        item.order = new_order
-        item.save()
+        # Fetch the item to swap with
+        if swap_with_type == 'folder':
+            swap_item = get_object_or_404(Folder, id=swap_with_id, batch=batch)
+        elif swap_with_type == 'file':
+            swap_item = get_object_or_404(File, id=swap_with_id, folder__batch=batch)
+        else:
+            return Response({'error': 'Invalid swap_with_type. Should be "folder" or "file".'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-        return Response({'status': f'{item_type.capitalize()} order updated', 'order': item.order},
-                        status=status.HTTP_200_OK)
+        # Swap the orders
+        item.order, swap_item.order = swap_item.order, item.order
+
+        # Save both items
+        item.save()
+        swap_item.save()
+
+        # Return only a status message without orders
+        return Response({'message': f'{item_type.capitalize()} orders updated successfully'}, status=status.HTTP_200_OK)
 
 
 class OfflineClassViewSet(CustomResponseMixin):
