@@ -51,6 +51,7 @@ urlpatterns = [
     path("api/settings/", include("apps.setting.urls")),
     path("api/announcement/", include("apps.announcement.urls")),
     path("api/notification/", include("apps.notification.urls")),
+    path("api/public/", include("apps.public.urls")),
     path("api/webhook/", include("apps.webhook.urls")),
 ]
 if settings.DEBUG:
