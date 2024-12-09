@@ -69,9 +69,9 @@ class Transaction(TimeStampedModel):
             current_value = config.INVOICE_NUMBER_COUNTER
             if not current_value:
                 current_value = 1
-            self.invoice_counter = current_value
-            setattr(config, 'INVOICE_NUMBER_COUNTER', int(current_value) + 1)
+            self.invoice_counter = int(current_value)
             super().save(*args, **kwargs)
+            setattr(config, 'INVOICE_NUMBER_COUNTER', int(current_value) + 1)
 
     @property
     def gst_calculation(self):
