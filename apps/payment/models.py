@@ -52,7 +52,7 @@ class Transaction(TimeStampedModel):
     coupon = models.ForeignKey('coupon.Coupon', on_delete=models.SET_NULL, null=True, blank=True)
 
     payment_id = models.CharField(max_length=255, null=True, blank=True)  # Razorpay Payment ID
-    invoice_counter = models.PositiveIntegerField(default=1, null=True, blank=True)
+    invoice_counter = models.PositiveIntegerField(null=True, blank=True)
 
     def __str__(self):
         return f'Transaction {self.transaction_id} for {self.content_type.capitalize()} {self.content_id}'
