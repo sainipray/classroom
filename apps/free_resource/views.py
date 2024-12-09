@@ -1,3 +1,6 @@
+from itertools import chain
+
+from django.db import transaction
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -144,44 +147,59 @@ class FolderFileViewSet(viewsets.ViewSet):
 
     @action(detail=True, methods=['patch'], url_path='update-order')
     def update_order(self, request, pk=None):
-        # Extract the 'type' (folder or file), 'id', 'order', and 'swap_with_id'
-        item_type = request.data.get('type')  # 'folder' or 'file'
+        """
+        Reorder a folder or file within its parent directory.
+        """
         item_id = request.data.get('id')
-        new_order = request.data.get('order')
-        swap_with_id = request.data.get('swap_with_id')
-        swap_with_type = request.data.get('swap_with_type')  # 'folder' or 'file'
+        item_type = request.data.get('type')  # 'folder' or 'file'
+        direction = request.data.get('direction')  # 'up' or 'down'
 
-        if not item_type or not item_id or new_order is None or not swap_with_id or not swap_with_type:
-            return Response({'error': 'Type, id, order, swap_with_id, and swap_with_type are required.'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        if item_type not in ['folder', 'file']:
+            return Response({'error': 'Invalid type'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Get the course
-        resource = self.get_resource(pk)
+        if direction not in ['up', 'down']:
+            return Response({'error': 'Invalid direction'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Fetch the item being moved
-        if item_type == 'folder':
-            item = get_object_or_404(Folder, id=item_id, resource=resource)
-        elif item_type == 'file':
-            item = get_object_or_404(File, id=item_id, folder__resource=resource)
-        else:
-            return Response({'error': 'Invalid type. Should be "folder" or "file".'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        model = Folder if item_type == 'folder' else File
+        try:
+            item = model.objects.get(id=item_id)
+        except model.DoesNotExist:
+            return Response({'error': f'{item_type.capitalize()} not found'}, status=status.HTTP_404_NOT_FOUND)
 
-        # Fetch the item to swap with
-        if swap_with_type == 'folder':
-            swap_item = get_object_or_404(Folder, id=swap_with_id, resource=resource)
-        elif swap_with_type == 'file':
-            swap_item = get_object_or_404(File, id=swap_with_id, folder__resource=resource)
-        else:
-            return Response({'error': 'Invalid swap_with_type. Should be "folder" or "file".'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        # Determine parent directory
+        parent = item.parent if item_type == 'folder' else item.folder
 
-        # Swap the orders
-        item.order, swap_item.order = swap_item.order, item.order
+        with transaction.atomic():
+            # Fetch all siblings (folders and files) in the parent directory
+            folders = Folder.objects.filter(parent=parent).order_by('order')
+            files = File.objects.filter(folder=parent).order_by('order')
 
-        # Save both items
-        item.save()
-        swap_item.save()
+            # Combine and sort by order
+            siblings = sorted(chain(folders, files), key=lambda x: x.order)
 
-        # Return only a status message without orders
-        return Response({'message': f'{item_type.capitalize()} orders updated successfully'}, status=status.HTTP_200_OK)
+            # Normalize order values to avoid gaps or duplicates
+            for index, sibling in enumerate(siblings, start=1):
+                if sibling.order != index:
+                    sibling.order = index
+                    sibling.save()
+
+            # update item object after setting indexing
+            item = model.objects.get(id=item_id)
+            # Find adjacent item to swap with
+            current_index = siblings.index(item)
+            if direction == 'up' and current_index > 0:
+                adjacent_item = siblings[current_index - 1]
+            elif direction == 'down' and current_index < len(siblings) - 1:
+                adjacent_item = siblings[current_index + 1]
+            else:
+                return Response(
+                    {'error': f'{item_type.capitalize()} is already at the {"top" if direction == "up" else "bottom"}'},
+                    status=status.HTTP_400_BAD_REQUEST)
+
+            # Swap order values
+            item.order, adjacent_item.order = adjacent_item.order, item.order
+            item.save()
+            adjacent_item.save()
+
+        return Response({'message': f'{item_type.capitalize()} moved {direction} successfully'},
+                        status=status.HTTP_200_OK)
