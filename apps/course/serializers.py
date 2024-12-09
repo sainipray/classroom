@@ -58,12 +58,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = [
-            'id', 'name', 'description', 'thumbnail', 'price', 'discount', 'effective_price',
-            'validity_type', 'duration_value', 'duration_unit', 'expiry_date',
-            'is_published', 'is_featured', 'categories'
-        ]
-
+        fields = '__all__'
     def validate(self, attrs):
         request = self.context.get('request')
         user = request.user

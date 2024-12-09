@@ -68,6 +68,17 @@ class Course(TimeStampedModel):
     is_featured = models.BooleanField(default=False, verbose_name="Is Featured")
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name="Author")
 
+    param_duration = models.CharField(max_length=255, null=True, blank=True)
+    param_enrolled = models.CharField(max_length=255, null=True, blank=True)
+    param_chapters = models.CharField(max_length=255, null=True, blank=True)
+    param_videos = models.CharField(max_length=255, null=True, blank=True)
+    param_level = models.CharField(max_length=255, null=True, blank=True)
+    param_1 = models.CharField(max_length=255, null=True, blank=True)
+    param_2 = models.CharField(max_length=255, null=True, blank=True)
+    param_3 = models.CharField(max_length=255, null=True, blank=True)
+    param_4 = models.CharField(max_length=255, null=True, blank=True)
+    param_5 = models.CharField(max_length=255, null=True, blank=True)
+
     def save(self, *args, **kwargs):
         if self.price and self.discount:
             self.effective_price = self.discount
