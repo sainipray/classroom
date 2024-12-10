@@ -40,7 +40,9 @@ class BatchSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Batch
-        fields = ['name', 'start_date', 'subject', 'created_by', 'batch_code', 'fee_structure', 'thumbnail']
+        fields = ['name', 'start_date', 'subject', 'created_by', 'batch_code', 'fee_structure', 'thumbnail',
+                  'param_duration', 'param_enrolled', 'param_chapters', 'param_videos', 'param_level',
+                  'param_1', 'param_2', 'param_3', 'param_4', 'param_5']
 
     def create(self, validated_data):
         # The validated data doesn't contain `created_by` yet, so we add it manually.
