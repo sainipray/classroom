@@ -67,6 +67,17 @@ class Batch(TimeStampedModel):
                                       on_delete=models.SET_NULL)
     thumbnail = models.CharField(max_length=255, verbose_name="Thumbnail", null=True, blank=True)
 
+    param_duration = models.CharField(max_length=255, null=True, blank=True)
+    param_enrolled = models.CharField(max_length=255, null=True, blank=True)
+    param_chapters = models.CharField(max_length=255, null=True, blank=True)
+    param_videos = models.CharField(max_length=255, null=True, blank=True)
+    param_level = models.CharField(max_length=255, null=True, blank=True)
+    param_1 = models.CharField(max_length=255, null=True, blank=True)
+    param_2 = models.CharField(max_length=255, null=True, blank=True)
+    param_3 = models.CharField(max_length=255, null=True, blank=True)
+    param_4 = models.CharField(max_length=255, null=True, blank=True)
+    param_5 = models.CharField(max_length=255, null=True, blank=True)
+
     class Meta:
         verbose_name = "Batch"
         verbose_name_plural = "Batches"
