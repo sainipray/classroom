@@ -163,3 +163,12 @@ class BatchReviewSerializer(serializers.ModelSerializer):
         model = BatchReview
         fields = ['id', 'batch', 'title', 'description', 'rating', 'student']
         read_only_fields = ['id', 'created']
+
+    def validate(self, data):
+        student = self.context['request'].user
+        batch = data.get('batch')
+
+        if BatchReview.objects.filter(batch=batch, student=student).exists():
+            raise serializers.ValidationError("You have already submitted a review for this batch.")
+
+        return data

@@ -278,3 +278,12 @@ class CourseReviewSerializer(serializers.ModelSerializer):
         model = CourseReview
         fields = ['id', 'course', 'title', 'description', 'rating', 'student']
         read_only_fields = ['id', 'created']
+
+    def validate(self, data):
+        student = self.context['request'].user
+        course = data.get('course')
+
+        if CourseReview.objects.filter(course=course, student=student).exists():
+            raise serializers.ValidationError("You have already submitted a review for this course.")
+
+        return data
