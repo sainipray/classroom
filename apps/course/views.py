@@ -463,4 +463,4 @@ class CourseReviewViewSet(CustomResponseMixin):
     serializer_class = CourseReviewSerializer
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        serializer.save(student=self.request.user)
