@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.utils import timezone
 from rest_framework import serializers
 
-from apps.batch.models import Batch, Subject, Folder, File, OfflineClass, BatchFaculty
+from apps.batch.models import Batch, Subject, Folder, File, OfflineClass, BatchFaculty, BatchReview
 from apps.batch.serializers.fee_serializers import FeeStructureSerializer
 from apps.batch.serializers.liveclass_serializers import LiveClassSerializer
 from apps.batch.serializers.offline_classes_serializers import RetrieveOfflineClassSerializer
@@ -154,3 +154,12 @@ class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
         fields = ['id', 'title', 'folder', 'url', 'created', 'is_locked', 'order']
+
+
+class BatchReviewSerializer(serializers.ModelSerializer):
+    student = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = BatchReview
+        fields = ['id', 'batch', 'title', 'description', 'rating', 'student']
+        read_only_fields = ['id', 'created']

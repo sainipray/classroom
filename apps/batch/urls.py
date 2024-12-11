@@ -5,7 +5,7 @@ from .student_views import AvailableBatchViewSet, PurchasedBatchViewSet, Student
     StudentBatchAttendanceViewSet, StudentFeesRecordAPI, StudentBatchClassesView
 from .views import (SubjectViewSet, BatchViewSet, EnrollmentViewSet, LiveClassViewSet, AttendanceViewSet,
                     StudyMaterialViewSet, CreateLiveClassView, FeeStructureViewSet, FeesRecordAPI, FolderFileViewSet,
-                    OfflineClassViewSet, StudentJoinBatchView, AddFeesRecordAPI)
+                    OfflineClassViewSet, StudentJoinBatchView, AddFeesRecordAPI, BatchReviewViewSet)
 
 router = DefaultRouter()
 router.register(r'subjects', SubjectViewSet)
@@ -17,6 +17,7 @@ router.register(r'enrollments', EnrollmentViewSet)
 router.register(r'fee-structures', FeeStructureViewSet)
 router.register(r'content', FolderFileViewSet, basename='batch-content')
 router.register(r'offline-classes', OfflineClassViewSet)
+router.register('reviews', BatchReviewViewSet, basename='batch-review')
 
 student_router = DefaultRouter()
 student_router.register(r'student/available-batches', AvailableBatchViewSet, basename='available-batches')

@@ -3,6 +3,7 @@ from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django_extensions.db.models import TimeStampedModel, TitleSlugDescriptionModel, ActivatorModel
 
+from abstract.models import AbstractReview
 from apps.user.models import Student
 
 User = get_user_model()
@@ -387,6 +388,7 @@ class CoursePurchaseOrder(TimeStampedModel):
     class Meta:
         ordering = ('-created',)
 
+
 class CourseLiveClass(TimeStampedModel):
     course = models.ForeignKey(Course, related_name="live_classes", on_delete=models.CASCADE, verbose_name="Course")
     title = models.CharField(max_length=255, verbose_name="Class Title")
@@ -434,3 +436,7 @@ class CourseAttendance(TimeStampedModel):
 
     def __str__(self):
         return f"{self.student} - {self.live_class} - {'Present' if self.attended else 'Absent'}"
+
+
+class CourseReview(AbstractReview):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='reviews')

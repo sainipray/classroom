@@ -6,6 +6,8 @@ from django.db import models
 from django.utils import timezone
 from django_extensions.db.models import TimeStampedModel
 
+from abstract.models import AbstractReview
+
 User = get_user_model()
 
 
@@ -442,3 +444,7 @@ class BatchPurchaseOrder(TimeStampedModel):
 
     def __str__(self):
         return f"BatchPurchaseOrder {self.id} - {self.batch.name} - Installment {self.installment_number}"
+
+
+class BatchReview(AbstractReview):
+    batch = models.ForeignKey(Batch, on_delete=models.CASCADE, related_name='reviews')

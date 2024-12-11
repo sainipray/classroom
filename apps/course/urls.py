@@ -4,7 +4,7 @@ from rest_framework.routers import DefaultRouter
 from apps.course.student_views import AvailableCourseViewSet, PurchasedCourseCourseViewSet, \
     StudentCourseLiveClassesViewSet
 from apps.course.views import CategoryViewSet, SubcategoryViewSet, CourseViewSet, FolderFileViewSet, \
-    CreateCourseLiveClassView, CourseLiveClassViewSet
+    CreateCourseLiveClassView, CourseLiveClassViewSet, CourseReviewViewSet
 
 router = DefaultRouter()
 router.register(r'categories', CategoryViewSet)
@@ -12,6 +12,7 @@ router.register(r'subcategories', SubcategoryViewSet)
 router.register(r'live-classes', CourseLiveClassViewSet, basename='course_live-classes')
 router.register(r'courses', CourseViewSet, basename='course')
 router.register(r'content', FolderFileViewSet, basename='course-content')
+router.register('reviews', CourseReviewViewSet, basename='course-review')
 
 # Student API router
 student_router = DefaultRouter()

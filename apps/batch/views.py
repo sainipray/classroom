@@ -19,10 +19,10 @@ from rest_framework.viewsets import GenericViewSet
 from abstract.views import CustomResponseMixin
 from config.live_video import MeritHubAPI
 from .models import Subject, Batch, Enrollment, LiveClass, Attendance, StudyMaterial, FeeStructure, Folder, File, \
-    BatchPurchaseOrder, OfflineClass, BatchFaculty, Schedule, TimeSlot
+    BatchPurchaseOrder, OfflineClass, BatchFaculty, Schedule, TimeSlot, BatchReview
 from .serializers.attendance_serializers import AttendanceSerializer
 from .serializers.batch_serializers import BatchSerializer, RetrieveBatchSerializer, SubjectSerializer, \
-    FolderSerializer, FileSerializer
+    FolderSerializer, FileSerializer, BatchReviewSerializer
 from .serializers.enrollment_serializers import EnrollmentSerializer, BatchStudentUserSerializer, \
     ListEnrollmentSerializer
 from .serializers.fee_serializers import FeeStructureSerializer, AddFeesRecordSerializer
@@ -615,6 +615,8 @@ class FolderFileViewSet(viewsets.ViewSet):
 
         return Response({'message': f'{item_type.capitalize()} moved {direction} successfully'},
                         status=status.HTTP_200_OK)
+
+
 class OfflineClassViewSet(CustomResponseMixin):
     queryset = OfflineClass.objects.all()
     serializer_class = OfflineClassSerializer
@@ -661,3 +663,11 @@ class StudentJoinBatchView(APIView):
         batch = serializer.validated_data['batch']
         Enrollment.objects.create(batch=batch, student=request.user)
         return Response({"message": "Successfully joined the batch."}, status=status.HTTP_201_CREATED)
+
+
+class BatchReviewViewSet(CustomResponseMixin):
+    queryset = BatchReview.objects.all()
+    serializer_class = BatchReviewSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

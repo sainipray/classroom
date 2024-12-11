@@ -5,7 +5,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from .models import Category, Subcategory, Course, CourseCategorySubCategory, Folder, File, CourseFaculty, \
-    CourseValidityPeriod, CourseLiveClass
+    CourseValidityPeriod, CourseLiveClass, CourseReview
 
 User = get_user_model()
 
@@ -116,7 +116,6 @@ class CourseValidityPeriodSerializer(serializers.ModelSerializer):
 
         return data
 
-
     def update(self, instance, validated_data):
         instance.price = validated_data.get('price', instance.price)
         instance.discount = validated_data.get('discount', instance.discount)
@@ -161,7 +160,7 @@ class CoursePriceUpdateSerializer(serializers.ModelSerializer):
             instance.price = validated_data.get('price', instance.price)
             instance.discount = validated_data.get('discount', instance.discount)
             instance.effective_price = instance.price - (
-                        instance.price * (instance.discount / 100)) if instance.price else instance.price
+                    instance.price * (instance.discount / 100)) if instance.price else instance.price
             instance.duration_value = validated_data.get('duration_value', instance.duration_value)
             instance.duration_unit = validated_data.get('duration_unit', instance.duration_unit)
             instance.expiry_date = validated_data.get('expiry_date', instance.expiry_date)
@@ -267,8 +266,15 @@ class CreateCourseLiveClassSerializer(serializers.Serializer):
 
 
 class RetrieveCourseLiveClassSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = CourseLiveClass
         fields = '__all__'
 
+
+class CourseReviewSerializer(serializers.ModelSerializer):
+    student = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = CourseReview
+        fields = ['id', 'course', 'title', 'description', 'rating', 'student']
+        read_only_fields = ['id', 'created']

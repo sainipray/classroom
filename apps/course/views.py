@@ -17,10 +17,10 @@ from abstract.views import CustomResponseMixin
 from config.live_video import MeritHubAPI
 from .filters import CourseFilter
 from .models import Category, Subcategory, Course, Folder, File, CourseFaculty, CourseLiveClass, CoursePurchaseOrder, \
-    CourseAttendance
+    CourseAttendance, CourseReview
 from .serializers import CategorySerializer, SubcategorySerializer, CourseSerializer, CoursePriceUpdateSerializer, \
     ListCourseSerializer, FolderSerializer, FileSerializer, ListSubcategorySerializer, CreateCourseLiveClassSerializer, \
-    RetrieveCourseLiveClassSerializer
+    RetrieveCourseLiveClassSerializer, CourseReviewSerializer
 from ..user.models import Roles
 from ..utils.functions import merge_and_sort_items
 
@@ -360,6 +360,8 @@ class FolderFileViewSet(viewsets.ViewSet):
 
         return Response({'message': f'{item_type.capitalize()} moved {direction} successfully'},
                         status=status.HTTP_200_OK)
+
+
 class CreateCourseLiveClassView(APIView):
 
     def post(self, request):
@@ -454,3 +456,11 @@ class CourseLiveClassViewSet(mixins.DestroyModelMixin,
                              GenericViewSet):
     queryset = CourseLiveClass.objects.all()
     serializer_class = RetrieveCourseLiveClassSerializer
+
+
+class CourseReviewViewSet(CustomResponseMixin):
+    queryset = CourseReview.objects.all()
+    serializer_class = CourseReviewSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
