@@ -11,7 +11,7 @@ class Command(BaseCommand):
         permissions_data = [
             'Courses', 'Students', 'Fee Record', 'Fee Structure', 'Batches',
             'Coupons', 'Quiz', 'Lead & Inquiries', 'Products',
-            'Transactions', 'Free Resource', 'Team Members', 'Report', 'Settings', 'Chat'
+            'Transactions', 'Free Resource', 'Team Members', 'Report', 'Settings', 'Chat', 'Notifications'
         ]
 
         # Create modules if they don't exist
