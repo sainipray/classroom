@@ -11,7 +11,7 @@ class PublicTestSeriesSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class PublicCategorySerializer(serializers.Serializer):
+class PublicCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = '__all__'
