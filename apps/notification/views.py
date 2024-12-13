@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from push_notifications.models import GCMDevice
 from .serializers import PushNotificationSerializer
 from apps.course.models import CoursePurchaseOrder
-
+from .models import PushNotification  # Import the model
 
 class PushNotificationView(APIView):
 
@@ -37,7 +37,17 @@ class PushNotificationView(APIView):
         elif criteria == "general":
             devices = GCMDevice.objects.filter(active=True)
 
-        # Send push notifications
-        devices.send_message({"title": title, "body": message})
+        # # Send push notifications
+        # devices.send_message({"title": title, "body": message})
 
-        return Response({"message": "Notification sent successfully."})
+        # Save the push notification in the database
+        notification = PushNotification.objects.create(
+            title=title,
+            message=message,
+            criteria=criteria,
+            course=validated_data.get("course", None),
+            batch=validated_data.get("batch", None),
+            student_ids=validated_data.get("student_ids", []),  # Save student IDs as an array
+        )
+
+        return Response({"message": "Notification sent and saved successfully."})

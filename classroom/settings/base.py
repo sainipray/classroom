@@ -57,7 +57,8 @@ PROJECT_APPS = [
     "apps.payment.apps.PaymentConfig",
     "apps.test_series.apps.TestSeriesConfig",
     "apps.free_resource.apps.FreeResourceConfig",
-    "apps.announcement.apps.AnnouncementConfig"
+    "apps.announcement.apps.AnnouncementConfig",
+    "apps.notification.apps.NotificationConfig"
 ]
 
 INSTALLED_APPS += PROJECT_APPS
