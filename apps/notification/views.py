@@ -39,7 +39,7 @@ class PushNotificationView(APIView):
                 is_approved=True
             ).values_list("student__id", flat=True)
             devices = GCMDevice.objects.filter(user__id__in=approved_students)
-        elif criteria == "manual":
+        elif criteria == "student":
             student_ids = validated_data["student_ids"]
             devices = GCMDevice.objects.filter(user__id__in=student_ids)
         elif criteria == "general":
