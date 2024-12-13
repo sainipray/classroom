@@ -1,13 +1,45 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from apps.batch.models import Batch
 from apps.course.models import Course
+from apps.notification.models import PushNotification
+
+User = get_user_model()
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    course_title = serializers.SerializerMethodField()
+    batch_title = serializers.SerializerMethodField()
+    student_names = serializers.SerializerMethodField()
+
+    class Meta:
+        model = PushNotification
+        fields = '__all__'  # Include all fields from the model
+        extra_fields = ['course_title', 'batch_title', 'student_names']
+
+    def get_course_title(self, obj):
+        if obj.course:
+            return obj.course.title  # Assuming Course model has a `title` field
+        return None
+
+    def get_batch_title(self, obj):
+        if obj.batch:
+            return obj.batch.title  # Assuming Batch model has a `title` field
+        return None
+
+    def get_student_names(self, obj):
+        if obj.student_ids:
+            students = User.objects.filter(id__in=obj.student_ids).values_list("full_name", flat=True)
+            return list(students)
+        return []
+
 
 
 class PushNotificationSerializer(serializers.Serializer):
     title = serializers.CharField(max_length=255, required=True)
     message = serializers.CharField(required=True)
-    criteria = serializers.ChoiceField(choices=["course", "batch", "manual", "general"], required=True)
+    criteria = serializers.ChoiceField(choices=["course", "batch", "student", "general"], required=True)
     course_id = serializers.IntegerField(required=False)  # Frontend sends this
     batch_id = serializers.IntegerField(required=False)  # Frontend sends this
     student_ids = serializers.ListField(
@@ -44,8 +76,8 @@ class PushNotificationSerializer(serializers.Serializer):
             data["batch"] = self.validate_batch_id(data["batch_id"])  # Add instance to data
 
         # Validate for 'manual' criteria
-        if criteria == "manual":
+        if criteria == "student":
             if not data.get("student_ids"):
-                raise serializers.ValidationError({"student_ids": "This field is required for 'manual' criteria."})
+                raise serializers.ValidationError({"student_ids": "This field is required for 'student' criteria."})
 
         return data

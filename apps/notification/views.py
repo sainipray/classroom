@@ -1,9 +1,17 @@
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from push_notifications.models import GCMDevice
-from .serializers import PushNotificationSerializer
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from abstract.views import ReadOnlyCustomResponseMixin
 from apps.course.models import CoursePurchaseOrder
 from .models import PushNotification  # Import the model
+from .serializers import PushNotificationSerializer, NotificationSerializer
+
+
+class NotificationViewSet(ReadOnlyCustomResponseMixin):
+    serializer_class = NotificationSerializer
+    queryset = PushNotification.objects.all()
+
 
 class PushNotificationView(APIView):
 
