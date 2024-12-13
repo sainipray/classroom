@@ -53,6 +53,7 @@ urlpatterns = [
     path("api/notification/", include("apps.notification.urls")),
     path("api/public/", include("apps.public.urls")),
     path("api/webhook/", include("apps.webhook.urls")),
+    path("api/mobile/", include("apps.mobile.urls")),
 ]
 if settings.DEBUG:
     urlpatterns += [
