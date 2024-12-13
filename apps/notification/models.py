@@ -11,7 +11,7 @@ User = get_user_model()
 class PushNotification(models.Model):
     title = models.CharField(max_length=255)
     message = models.TextField(null=True, blank=True)
-    criteria = models.CharField(max_length=20, choices=[("course", "Course"), ("batch", "Batch"), ("manual", "Manual"),
+    criteria = models.CharField(max_length=20, choices=[("course", "Course"), ("batch", "Batch"), ("student", "Student"),
                                                         ("general", "General")])
     course = models.ForeignKey(Course, null=True, blank=True, on_delete=models.CASCADE)
     batch = models.ForeignKey(Batch, null=True, blank=True, on_delete=models.CASCADE)
