@@ -1,4 +1,5 @@
 from push_notifications.models import GCMDevice
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -14,7 +15,6 @@ class NotificationViewSet(ReadOnlyCustomResponseMixin):
 
 
 class PushNotificationView(APIView):
-
     def post(self, request):
         serializer = PushNotificationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

@@ -20,12 +20,12 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     def get_course_title(self, obj):
         if obj.course:
-            return obj.course.title  # Assuming Course model has a `title` field
+            return obj.course.name  # Assuming Course model has a `title` field
         return None
 
     def get_batch_title(self, obj):
         if obj.batch:
-            return obj.batch.title  # Assuming Batch model has a `title` field
+            return obj.batch.name  # Assuming Batch model has a `title` field
         return None
 
     def get_student_names(self, obj):
@@ -67,13 +67,11 @@ class PushNotificationSerializer(serializers.Serializer):
         if criteria == "course":
             if not data.get("course"):
                 raise serializers.ValidationError({"course": "This field is required for 'course' criteria."})
-            data["course"] = self.validate_course(data["course"])  # Add instance to data
 
         # Validate for 'batch' criteria
         if criteria == "batch":
             if not data.get("batch"):
                 raise serializers.ValidationError({"batch": "This field is required for 'batch' criteria."})
-            data["batch"] = self.validate_batch(data["batch"])  # Add instance to data
 
         # Validate for 'manual' criteria
         if criteria == "student":
